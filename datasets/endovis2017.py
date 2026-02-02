@@ -9,21 +9,16 @@ import datasets.transforms_video as T
 import os
 from PIL import Image
 
-import json
 import numpy as np
 import random
 import glob
 
-
 from datasets.categories import endovis2017_category_dict as category_dict
 
 class EndoVis2017Dataset(Dataset):
-    # def __init__(self, img_folder: Path, ann_file: Path, transforms, 
-    #              num_frames: int, max_skip: int):
     def __init__(self, img_folder: Path, transforms, 
                 num_frames: int, max_skip: int):
-        self.img_folder = img_folder     
-        # self.ann_file = ann_file         
+        self.img_folder = img_folder             
         self._transforms = transforms    
         self.num_frames = num_frames     
         self.max_skip = max_skip
@@ -35,34 +30,18 @@ class EndoVis2017Dataset(Dataset):
 
     
     def prepare_metas(self):
-        # read object information
-        # with open(os.path.join(str(self.img_folder), 'meta.json'), 'r') as f:
-        #     subset_metas_by_video = json.load(f)['videos']
-        
-        # read expression data
-        # with open(str(self.ann_file), 'r') as f:
-        #     subset_expressions_by_video = json.load(f)['videos']
-        # self.videos = list(subset_expressions_by_video.keys())
         self.videos = glob.glob(self.img_folder, recursive=False)
 
         self.metas = []
         for vid in self.videos:
-            # vid_meta = subset_metas_by_video[vid]
-            # vid_data = subset_expressions_by_video[vid]
             vid_frames = sorted(glob.glob(vid)) # gets the files in video idx and sort them in order 
-            # vid_frames = sorted(vid_frames)
             vid_len = len(vid_frames)
-            # for exp_id, exp_dict in vid_data['expressions'].items():
+
             for frame_id in range(0, vid_len, self.num_frames):
                 meta = {}
                 meta['video'] = vid
-                # meta['exp'] = exp_dict['exp']
-                # meta['obj_id'] = int(exp_dict['obj_id'])
                 meta['frames'] = vid_frames
                 meta['frame_id'] = frame_id
-                # get object category
-                # obj_id = exp_dict['obj_id']
-                # meta['category'] = vid_meta['objects'][obj_id]['category']
                 self.metas.append(meta)
 
     @staticmethod
@@ -83,8 +62,6 @@ class EndoVis2017Dataset(Dataset):
         while not instance_check:
             meta = self.metas[idx]  # dict
 
-            # video, exp, obj_id, category, frames, frame_id = \
-            #             meta['video'], meta['exp'], meta['obj_id'], meta['category'], meta['frames'], meta['frame_id']
             video, frames, frame_id = \
                         meta['video'], meta['frames'], meta['frame_id']
             
@@ -118,7 +95,6 @@ class EndoVis2017Dataset(Dataset):
             sample_indx.sort()
 
             # read frames and masks
-            # imgs, labels, boxes, masks, valid = [], [], [], [], []
             imgs, boxes, masks, valid = [], [], [], []
             for j in range(self.num_frames):
                 frame_indx = sample_indx[j]
@@ -129,7 +105,6 @@ class EndoVis2017Dataset(Dataset):
                 mask = Image.open(mask_path).convert('P')
 
                 # create the target
-                # label =  torch.tensor(category_id) 
                 mask = np.array(mask)
                 mask = (mask==1).astype(np.float32) # 0,1 binary
                 if (mask > 0).any():
@@ -154,11 +129,9 @@ class EndoVis2017Dataset(Dataset):
             masks = torch.stack(masks, dim=0) 
             target = {
                 'frames_idx': torch.tensor(sample_indx), # [T,]
-                # 'labels': labels,                        # [T,]
                 'boxes': boxes,                          # [T, 4], xyxy
                 'masks': masks,                          # [T, H, W]
                 'valid': torch.tensor(valid),            # [T,]
-                # 'caption': exp,
                 'orig_size': torch.as_tensor([int(h), int(w)]), 
                 'size': torch.as_tensor([int(h), int(w)])
             }
