@@ -1,5 +1,5 @@
 """
-Ref-Davis17 data loader
+Endovis2017 data loader
 """
 from pathlib import Path
 
@@ -12,14 +12,18 @@ from PIL import Image
 import json
 import numpy as np
 import random
+import glob
+
 
 from datasets.categories import endovis2017_category_dict as category_dict
 
 class EndoVis2017Dataset(Dataset):
-    def __init__(self, img_folder: Path, ann_file: Path, transforms, 
-                 num_frames: int, max_skip: int):
+    # def __init__(self, img_folder: Path, ann_file: Path, transforms, 
+    #              num_frames: int, max_skip: int):
+    def __init__(self, img_folder: Path, transforms, 
+                num_frames: int, max_skip: int):
         self.img_folder = img_folder     
-        self.ann_file = ann_file         
+        # self.ann_file = ann_file         
         self._transforms = transforms    
         self.num_frames = num_frames     
         self.max_skip = max_skip
@@ -32,32 +36,34 @@ class EndoVis2017Dataset(Dataset):
     
     def prepare_metas(self):
         # read object information
-        with open(os.path.join(str(self.img_folder), 'meta.json'), 'r') as f:
-            subset_metas_by_video = json.load(f)['videos']
+        # with open(os.path.join(str(self.img_folder), 'meta.json'), 'r') as f:
+        #     subset_metas_by_video = json.load(f)['videos']
         
         # read expression data
-        with open(str(self.ann_file), 'r') as f:
-            subset_expressions_by_video = json.load(f)['videos']
-        self.videos = list(subset_expressions_by_video.keys())
+        # with open(str(self.ann_file), 'r') as f:
+        #     subset_expressions_by_video = json.load(f)['videos']
+        # self.videos = list(subset_expressions_by_video.keys())
+        self.videos = glob.glob(self.img_folder, recursive=False)
 
         self.metas = []
         for vid in self.videos:
-            vid_meta = subset_metas_by_video[vid]
-            vid_data = subset_expressions_by_video[vid]
-            vid_frames = sorted(vid_data['frames'])
+            # vid_meta = subset_metas_by_video[vid]
+            # vid_data = subset_expressions_by_video[vid]
+            vid_frames = sorted(glob.glob(vid)) # gets the files in video idx and sort them in order 
+            # vid_frames = sorted(vid_frames)
             vid_len = len(vid_frames)
-            for exp_id, exp_dict in vid_data['expressions'].items():
-                for frame_id in range(0, vid_len, self.num_frames):
-                    meta = {}
-                    meta['video'] = vid
-                    meta['exp'] = exp_dict['exp']
-                    meta['obj_id'] = int(exp_dict['obj_id'])
-                    meta['frames'] = vid_frames
-                    meta['frame_id'] = frame_id
-                    # get object category
-                    obj_id = exp_dict['obj_id']
-                    meta['category'] = vid_meta['objects'][obj_id]['category']
-                    self.metas.append(meta)
+            # for exp_id, exp_dict in vid_data['expressions'].items():
+            for frame_id in range(0, vid_len, self.num_frames):
+                meta = {}
+                meta['video'] = vid
+                # meta['exp'] = exp_dict['exp']
+                # meta['obj_id'] = int(exp_dict['obj_id'])
+                meta['frames'] = vid_frames
+                meta['frame_id'] = frame_id
+                # get object category
+                # obj_id = exp_dict['obj_id']
+                # meta['category'] = vid_meta['objects'][obj_id]['category']
+                self.metas.append(meta)
 
     @staticmethod
     def bounding_box(img):
@@ -77,13 +83,12 @@ class EndoVis2017Dataset(Dataset):
         while not instance_check:
             meta = self.metas[idx]  # dict
 
-            video, exp, obj_id, category, frames, frame_id = \
-                        meta['video'], meta['exp'], meta['obj_id'], meta['category'], meta['frames'], meta['frame_id']
-            # clean up the caption
-            exp = " ".join(exp.lower().split())
-            category_id = category_dict[category]
+            # video, exp, obj_id, category, frames, frame_id = \
+            #             meta['video'], meta['exp'], meta['obj_id'], meta['category'], meta['frames'], meta['frame_id']
+            video, frames, frame_id = \
+                        meta['video'], meta['frames'], meta['frame_id']
+            
             vid_len = len(frames)
-
             num_frames = self.num_frames
             # random sparse sample
             sample_indx = [frame_id]
@@ -113,19 +118,20 @@ class EndoVis2017Dataset(Dataset):
             sample_indx.sort()
 
             # read frames and masks
-            imgs, labels, boxes, masks, valid = [], [], [], [], []
+            # imgs, labels, boxes, masks, valid = [], [], [], [], []
+            imgs, boxes, masks, valid = [], [], [], []
             for j in range(self.num_frames):
                 frame_indx = sample_indx[j]
                 frame_name = frames[frame_indx]
-                img_path = os.path.join(str(self.img_folder), 'JPEGImages', video, frame_name + '.jpg')
-                mask_path = os.path.join(str(self.img_folder), 'Annotations', video, frame_name + '.png')
+                img_path = os.path.join(str(self.img_folder), 'image', video, frame_name + '.bmp')
+                mask_path = os.path.join(str(self.img_folder), 'label', video, frame_name + '.bmp')
                 img = Image.open(img_path).convert('RGB')
                 mask = Image.open(mask_path).convert('P')
 
                 # create the target
-                label =  torch.tensor(category_id) 
+                # label =  torch.tensor(category_id) 
                 mask = np.array(mask)
-                mask = (mask==obj_id).astype(np.float32) # 0,1 binary
+                mask = (mask==1).astype(np.float32) # 0,1 binary
                 if (mask > 0).any():
                     y1, y2, x1, x2 = self.bounding_box(mask)
                     box = torch.tensor([x1, y1, x2, y2]).to(torch.float)
@@ -137,24 +143,22 @@ class EndoVis2017Dataset(Dataset):
 
                 # append
                 imgs.append(img)
-                labels.append(label)
                 masks.append(mask)
                 boxes.append(box)
 
             # transform
             w, h = img.size
-            labels = torch.stack(labels, dim=0) 
             boxes = torch.stack(boxes, dim=0) 
             boxes[:, 0::2].clamp_(min=0, max=w)
             boxes[:, 1::2].clamp_(min=0, max=h)
             masks = torch.stack(masks, dim=0) 
             target = {
                 'frames_idx': torch.tensor(sample_indx), # [T,]
-                'labels': labels,                        # [T,]
+                # 'labels': labels,                        # [T,]
                 'boxes': boxes,                          # [T, 4], xyxy
                 'masks': masks,                          # [T, H, W]
                 'valid': torch.tensor(valid),            # [T,]
-                'caption': exp,
+                # 'caption': exp,
                 'orig_size': torch.as_tensor([int(h), int(w)]), 
                 'size': torch.as_tensor([int(h), int(w)])
             }
@@ -190,13 +194,13 @@ def make_coco_transforms(image_set, max_size=640):
 
 def build(image_set, args):
     root = Path(args.endovis2017)
-    assert root.exists(), f'provided DAVIS path {root} does not exist'
+    assert root.exists(), f'provided path {root} does not exist'
     PATHS = {
-        "train": (root / "train", root / "meta_expressions" / "train" / "meta_expressions.json"),
-        "val": (root / "valid", root / "meta_expressions" / "val" / "meta_expressions.json"),    # not used actually
+        "train": (root / "train"),
+        "val": (root / "val1"),    # not used actually
     }
-    img_folder, ann_file = PATHS[image_set]
-    dataset = EndoVis2017Dataset(img_folder, ann_file, transforms=make_coco_transforms(image_set, max_size=args.max_size),
+    img_folder = PATHS[image_set]
+    dataset = EndoVis2017Dataset(img_folder, transforms=make_coco_transforms(image_set, max_size=args.max_size),
                                 num_frames=args.num_frames, max_skip=args.max_skip)
     return dataset
 
