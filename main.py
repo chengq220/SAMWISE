@@ -154,25 +154,25 @@ def main(args):
             with (output_dir / "log.txt").open("a") as f:
                 f.write(json.dumps(log_stats) + "\n")
 
-        if args.dataset_file == 'ytvos':
-            print("Evaluate on DAVIS: ")
-            from inference_davis import eval_davis
-            m = model
-            out_dir = join(args.output_dir, f'valid_epoch{str(epoch).zfill(2)}')
-            eval_davis(args, m, out_dir)
-        elif args.dataset_file == 'mevis':
-            m = model
-            print("Evaluate on MeVis: ")
-            from inference_mevis import eval_mevis
-            out_dir = join(args.output_dir, f'valid_epoch{str(epoch).zfill(2)}')
-            args.split = 'valid_u'
-            result = eval_mevis(args, m, out_dir, out_dir)
+        # if args.dataset_file == 'ytvos':
+        #     print("Evaluate on DAVIS: ")
+        #     from inference_davis import eval_davis
+        #     m = model
+        #     out_dir = join(args.output_dir, f'valid_epoch{str(epoch).zfill(2)}')
+        #     eval_davis(args, m, out_dir)
+        # elif args.dataset_file == 'mevis':
+        #     m = model
+        #     print("Evaluate on MeVis: ")
+        #     from inference_mevis import eval_mevis
+        #     out_dir = join(args.output_dir, f'valid_epoch{str(epoch).zfill(2)}')
+        #     args.split = 'valid_u'
+        #     result = eval_mevis(args, m, out_dir, out_dir)
 
-            if utils.is_main_process():
-                out_str = f'Epoch: {epoch}:\nJ: {result[0]},\t F: {result[1]},\t J&F: {result[2]}'
-                print(out_str)
-                with (output_dir / "log.txt").open("a") as f:
-                    f.write(out_str + "\n")
+        #     if utils.is_main_process():
+        #         out_str = f'Epoch: {epoch}:\nJ: {result[0]},\t F: {result[1]},\t J&F: {result[2]}'
+        #         print(out_str)
+        #         with (output_dir / "log.txt").open("a") as f:
+        #             f.write(out_str + "\n")
 
         if utils.is_main_process():
             with (output_dir / "log.txt").open("a") as f:
