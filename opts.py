@@ -24,7 +24,7 @@ def get_args_parser():
 
     # Image Encoder: SAM2
     # Model configuration
-    parser.add_argument('--sam2_version', default='base', type=str, choices=['tiny', 'base', 'large'],
+    parser.add_argument('--sam2_version', default='tiny', type=str, choices=['tiny', 'base', 'large'],
                         help="Version of SAM2 image encoder to use")
     parser.add_argument('--disable_pred_obj_score', default=False, action='store_true',
                         help="Disable predicted object score")
@@ -54,20 +54,13 @@ def get_args_parser():
 
 
     # dataset settings
-    # ['ytvos', 'davis', 'refcoco', 'refcoco+', 'refcocog', 'all']
-    # 'all': using the three ref datasets for pretraining
-
     parser.add_argument('--dataset_file', default='ytvos', type=str,
-                        help="Dataset to use: ['ytvos', 'davis', 'refcoco', 'refcoco+', 'refcocog', 'all']")
-    parser.add_argument('--coco_path', type=str, default='data/coco',
-                        help="Path to COCO dataset")
-    parser.add_argument('--ytvos_path', type=str, default='data/ref-youtube-vos',
-                        help="Path to YouTube-VOS dataset")
-    parser.add_argument('--davis_path', type=str, default='data/ref-davis',
-                        help="Path to DAVIS dataset")
-    parser.add_argument('--mevis_path', type=str, default='data/MeViS_release',
-                        help="Path to MeViS dataset")
-    parser.add_argument('--max_size', default=1024, type=int,
+                        help="Dataset to use: ['endovis2017', endovis2018]")
+    parser.add_argument('--endovis2017', type=str, default='data/endovis2017',
+                        help="Path to Endovis2017 Dataset")
+    parser.add_argument('--endovis2018', type=str, default='data/endovis2018',
+                        help="Path to Endovis2018 Dataset")
+    parser.add_argument('--max_size', default=512, type=int,
                         help="Frame size for preprocessing")
     parser.add_argument('--augm_resize', default=False, action='store_true',
                         help="Enable data augmentation with random resizing")

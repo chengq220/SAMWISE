@@ -13,7 +13,7 @@ import json
 import numpy as np
 import random
 
-from datasets.categories import ytvos_category_dict as category_dict
+from datasets.dataset_unuse.categories import ytvos_category_dict as category_dict
 from datasets.transform_utils import make_coco_transforms, FrameSampler
 
 
