@@ -10,7 +10,7 @@ def get_args_parser():
                         help="Batch size for training")
     parser.add_argument('--batch_size_val', default=1, type=int,
                         help="Batch size for RIS evaluation")
-    parser.add_argument('--num_frames', default=8, type=int,
+    parser.add_argument('--num_frames', default=20, type=int,
                         help="Number of frames per training clip")
     parser.add_argument('--weight_decay', default=0, type=float,
                         help="Weight decay (L2 regularization)")
@@ -82,7 +82,7 @@ def get_args_parser():
                         help="Epoch to start training from (for resuming)")
     parser.add_argument('--eval', action='store_true',
                         help="Run evaluation instead of training - for RIS only")
-    parser.add_argument('--num_workers', default=4, type=int,
+    parser.add_argument('--num_workers', default=2, type=int,
                         help="Number of worker threads for data loading")
     parser.add_argument('--no_distributed', action='store_true', default=False,
                         help="Disable distributed training")

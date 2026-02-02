@@ -11,35 +11,32 @@ from PIL import Image
 
 import numpy as np
 import random
-import glob
 
 from datasets.categories import endovis2017_category_dict as category_dict
 
 class EndoVis2017Dataset(Dataset):
-    def __init__(self, img_folder: Path, transforms, 
+    def __init__(self, img_folder: Path, transforms,
                 num_frames: int, max_skip: int):
-        self.img_folder = img_folder             
-        self._transforms = transforms    
-        self.num_frames = num_frames     
+        self.img_folder = img_folder
+        self._transforms = transforms
+        self.num_frames = num_frames
         self.max_skip = max_skip
         # create video meta data
-        self.prepare_metas()    
+        self.prepare_metas()
 
-        print('\n video num: ', len(self.videos), ' clip num: ', len(self.metas))  
-        print('\n')            
+        print('\n video num: ', len(self.videos), ' clip num: ', len(self.metas))
+        print('\n')
 
-    
     def prepare_metas(self):
-        self.videos = glob.glob(self.img_folder, recursive=False)
-
+        self.videos = list(Path(os.path.join(self.img_folder, "image")).glob("*"))
         self.metas = []
         for vid in self.videos:
-            vid_frames = sorted(glob.glob(vid)) # gets the files in video idx and sort them in order 
+            vid_name = str(vid).split("/")[-1]
+            vid_frames = sorted(list(vid.glob("*"))) # gets the files in video idx and sort them in order
             vid_len = len(vid_frames)
-
             for frame_id in range(0, vid_len, self.num_frames):
                 meta = {}
-                meta['video'] = vid
+                meta['video'] = vid_name
                 meta['frames'] = vid_frames
                 meta['frame_id'] = frame_id
                 self.metas.append(meta)
@@ -50,11 +47,10 @@ class EndoVis2017Dataset(Dataset):
         cols = np.any(img, axis=0)
         rmin, rmax = np.where(rows)[0][[0, -1]]
         cmin, cmax = np.where(cols)[0][[0, -1]]
-        return rmin, rmax, cmin, cmax # y1, y2, x1, x2 
+        return rmin, rmax, cmin, cmax # y1, y2, x1, x2
 
     def __len__(self):
         return len(self.metas)
-        
 
     def __getitem__(self, idx):
         instance_check = False
@@ -63,7 +59,7 @@ class EndoVis2017Dataset(Dataset):
 
             video, frames, frame_id = \
                         meta['video'], meta['frames'], meta['frame_id']
-            
+
             vid_len = len(frames)
             num_frames = self.num_frames
             # random sparse sample
@@ -88,8 +84,8 @@ class EndoVis2017Dataset(Dataset):
                     for s_id in select_id:
                         sample_indx.append(all_inds[s_id])
                 else:
-                    select_id = random.sample(range(vid_len), global_n - vid_len) + list(range(vid_len))           
-                    for s_id in select_id:                                                                   
+                    select_id = random.sample(range(vid_len), global_n - vid_len) + list(range(vid_len))
+                    for s_id in select_id:
                         sample_indx.append(all_inds[s_id])
             sample_indx.sort()
 
@@ -97,21 +93,22 @@ class EndoVis2017Dataset(Dataset):
             imgs, boxes, masks, valid = [], [], [], []
             for j in range(self.num_frames):
                 frame_indx = sample_indx[j]
-                frame_name = frames[frame_indx]
-                img_path = os.path.join(str(self.img_folder), 'image', video, frame_name + '.bmp')
-                mask_path = os.path.join(str(self.img_folder), 'label', video, frame_name + '.bmp')
+                frame_path = frames[frame_indx]
+                frame_name = str(frame_path).split('/')[-1]
+                img_path = os.path.join(str(self.img_folder), 'image', video, frame_name)
+                mask_path = os.path.join(str(self.img_folder), 'label', video, frame_name)
                 img = Image.open(img_path).convert('RGB')
                 mask = Image.open(mask_path).convert('P')
-
                 # create the target
                 mask = np.array(mask)
-                mask = (mask==1).astype(np.float32) # 0,1 binary
+                cls = int(video[-1]) # the class that we are interested in
+                mask = (mask==cls).astype(np.float32) # 0,1 binary
                 if (mask > 0).any():
                     y1, y2, x1, x2 = self.bounding_box(mask)
                     box = torch.tensor([x1, y1, x2, y2]).to(torch.float)
                     valid.append(1)
                 else: # some frame didn't contain the instance
-                    box = torch.tensor([0, 0, 0, 0]).to(torch.float) 
+                    box = torch.tensor([0, 0, 0, 0]).to(torch.float)
                     valid.append(0)
                 mask = torch.from_numpy(mask)
 
@@ -122,23 +119,23 @@ class EndoVis2017Dataset(Dataset):
 
             # transform
             w, h = img.size
-            boxes = torch.stack(boxes, dim=0) 
+            boxes = torch.stack(boxes, dim=0)
             boxes[:, 0::2].clamp_(min=0, max=w)
             boxes[:, 1::2].clamp_(min=0, max=h)
-            masks = torch.stack(masks, dim=0) 
+            masks = torch.stack(masks, dim=0)
             target = {
                 'frames_idx': torch.tensor(sample_indx), # [T,]
                 'boxes': boxes,                          # [T, 4], xyxy
                 'masks': masks,                          # [T, H, W]
                 'valid': torch.tensor(valid),            # [T,]
-                'orig_size': torch.as_tensor([int(h), int(w)]), 
+                'orig_size': torch.as_tensor([int(h), int(w)]),
                 'size': torch.as_tensor([int(h), int(w)])
             }
 
             # "boxes" normalize to [0, 1] and transform from xyxy to cxcywh in self._transform
-            imgs, target = self._transforms(imgs, target) 
+            imgs, target = self._transforms(imgs, target)
             imgs = torch.stack(imgs, dim=0) # [T, 3, H, W]
-            
+
             # FIXME: handle "valid", since some box may be removed due to random crop
             if torch.any(target['valid'] == 1):  # at leatst one instance
                 instance_check = True
@@ -147,22 +144,14 @@ class EndoVis2017Dataset(Dataset):
 
         return imgs, target
 
-
-
-def make_coco_transforms(image_set, max_size=640):
+def make_coco_transforms():
     normalize = T.Compose([
         T.ToTensor(),
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
-    
-    if image_set == 'val':
-        return T.Compose([
-            T.RandomResize([360], max_size=640),
-            normalize,
-        ])
 
-    raise ValueError(f'unknown {image_set}')
-
+    # we need augumentation for training or do we
+    return normalize
 
 def build(image_set, args):
     root = Path(args.endovis2017)
@@ -172,8 +161,6 @@ def build(image_set, args):
         "val": (root / "val1"),    # not used actually
     }
     img_folder = PATHS[image_set]
-    dataset = EndoVis2017Dataset(img_folder, transforms=make_coco_transforms(image_set, max_size=args.max_size),
+    dataset = EndoVis2017Dataset(img_folder, transforms=make_coco_transforms(),
                                 num_frames=args.num_frames, max_skip=args.max_skip)
     return dataset
-
-

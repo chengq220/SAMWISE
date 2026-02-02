@@ -82,68 +82,68 @@ def train_one_epoch(model: torch.nn.Module,
     print("Averaged stats:", metric_logger)
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
-@torch.no_grad()
-def evaluate(model, postprocessors, data_loader, device, args):
-    model.eval()
+# @torch.no_grad()  ### Need to write out the eval metric
+# def evaluate(model, postprocessors, data_loader, device, args):
+#     model.eval()
 
-    metric_logger = utils.MetricLogger(delimiter="  ")
-    header = 'Test:'
-    predictions = []
-    for samples, targets in metric_logger.log_every(data_loader, 20, header):
-        dataset_name = targets[0]["dataset_name"]
-        samples = samples.to(device)
-        captions = [t["caption"] for t in targets]
-        targets = utils.targets_to(targets, device)
+#     metric_logger = utils.MetricLogger(delimiter="  ")
+#     header = 'Test:'
+#     predictions = []
+#     for samples, targets in metric_logger.log_every(data_loader, 20, header):
+#         dataset_name = targets[0]["dataset_name"]
+#         samples = samples.to(device)
+#         captions = [t["caption"] for t in targets]
+#         targets = utils.targets_to(targets, device)
 
-        outputs = model(samples, captions, targets)
+#         outputs = model(samples, captions, targets)
 
-        orig_target_sizes = torch.stack([t["orig_size"] for t in targets], dim=0)
-        # results = postprocessors['bbox'](outputs, orig_target_sizes)
-        if 'segm' in postprocessors.keys():
-            target_sizes = torch.stack([t["size"] for t in targets], dim=0)
-            results = postprocessors['segm']([], outputs, orig_target_sizes, target_sizes)
+#         orig_target_sizes = torch.stack([t["orig_size"] for t in targets], dim=0)
+#         # results = postprocessors['bbox'](outputs, orig_target_sizes)
+#         if 'segm' in postprocessors.keys():
+#             target_sizes = torch.stack([t["size"] for t in targets], dim=0)
+#             results = postprocessors['segm']([], outputs, orig_target_sizes, target_sizes)
 
-        # REC & RES predictions
-        for p, target in zip(results, targets):
-            for m in p['rle_masks']:
-                predictions.append({'image_id': target['image_id'].item(),
-                                    'category_id': 1,  # dummy label, as categories are not predicted in ref-vos
-                                    'segmentation': m,
-                                    'score': 1
-                                    })
+#         # REC & RES predictions
+#         for p, target in zip(results, targets):
+#             for m in p['rle_masks']:
+#                 predictions.append({'image_id': target['image_id'].item(),
+#                                     'category_id': 1,  # dummy label, as categories are not predicted in ref-vos
+#                                     'segmentation': m,
+#                                     'score': 1
+#                                     })
 
-    # gather the stats from all processes
-    metric_logger.synchronize_between_processes()
-    print("Averaged stats:", metric_logger)
+#     # gather the stats from all processes
+#     metric_logger.synchronize_between_processes()
+#     print("Averaged stats:", metric_logger)
 
-    # evaluate RES
-    # gather and merge predictions from all gpus
-    gathered_pred_lists = utils.all_gather(predictions)
-    predictions = [p for p_list in gathered_pred_lists for p in p_list]
+#     # evaluate RES
+#     # gather and merge predictions from all gpus
+#     gathered_pred_lists = utils.all_gather(predictions)
+#     predictions = [p for p_list in gathered_pred_lists for p in p_list]
 
-    eval_metrics = {}
-    if utils.is_main_process():
-        if dataset_name == 'refcoco':
-            coco_gt = COCO(os.path.join(args.coco_path, 'refcoco/instances_refcoco_val.json'))
-        elif dataset_name == 'refcoco+':
-            coco_gt = COCO(os.path.join(args.coco_path, 'refcoco+/instances_refcoco+_val.json'))
-        elif dataset_name == 'refcocog':
-            coco_gt = COCO(os.path.join(args.coco_path, 'refcocog/instances_refcocog_val.json'))
-        else:
-            raise NotImplementedError
-        coco_pred = coco_gt.loadRes(predictions)
-        coco_eval = COCOeval(coco_gt, coco_pred, iouType='segm')
-        coco_eval.params.useCats = 0  # ignore categories as they are not predicted in ref-vos task
-        coco_eval.evaluate()
-        coco_eval.accumulate()
-        coco_eval.summarize()
-        ap_labels = ['mAP 0.5:0.95', 'AP 0.5', 'AP 0.75', 'AP 0.5:0.95 S', 'AP 0.5:0.95 M', 'AP 0.5:0.95 L']
-        ap_metrics = coco_eval.stats[:6]
-        eval_metrics = {l: m for l, m in zip(ap_labels, ap_metrics)}
-        # Precision and IOU
-        precision_at_k, overall_iou, mean_iou = calculate_precision_at_k_and_iou_metrics(coco_gt, coco_pred)
-        eval_metrics.update({f'segm P@{k}': m for k, m in zip([0.5, 0.6, 0.7, 0.8, 0.9], precision_at_k)})
-        eval_metrics.update({'segm overall_iou': overall_iou, 'segm mean_iou': mean_iou})
-        print(eval_metrics)
+#     eval_metrics = {}
+#     if utils.is_main_process():
+#         if dataset_name == 'refcoco':
+#             coco_gt = COCO(os.path.join(args.coco_path, 'refcoco/instances_refcoco_val.json'))
+#         elif dataset_name == 'refcoco+':
+#             coco_gt = COCO(os.path.join(args.coco_path, 'refcoco+/instances_refcoco+_val.json'))
+#         elif dataset_name == 'refcocog':
+#             coco_gt = COCO(os.path.join(args.coco_path, 'refcocog/instances_refcocog_val.json'))
+#         else:
+#             raise NotImplementedError
+#         coco_pred = coco_gt.loadRes(predictions)
+#         coco_eval = COCOeval(coco_gt, coco_pred, iouType='segm')
+#         coco_eval.params.useCats = 0  # ignore categories as they are not predicted in ref-vos task
+#         coco_eval.evaluate()
+#         coco_eval.accumulate()
+#         coco_eval.summarize()
+#         ap_labels = ['mAP 0.5:0.95', 'AP 0.5', 'AP 0.75', 'AP 0.5:0.95 S', 'AP 0.5:0.95 M', 'AP 0.5:0.95 L']
+#         ap_metrics = coco_eval.stats[:6]
+#         eval_metrics = {l: m for l, m in zip(ap_labels, ap_metrics)}
+#         # Precision and IOU
+#         precision_at_k, overall_iou, mean_iou = calculate_precision_at_k_and_iou_metrics(coco_gt, coco_pred)
+#         eval_metrics.update({f'segm P@{k}': m for k, m in zip([0.5, 0.6, 0.7, 0.8, 0.9], precision_at_k)})
+#         eval_metrics.update({'segm overall_iou': overall_iou, 'segm mean_iou': mean_iou})
+#         print(eval_metrics)
 
-    return eval_metrics
+#     return eval_metrics
