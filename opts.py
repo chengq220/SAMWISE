@@ -105,7 +105,7 @@ def get_args_parser():
     parser.add_argument('--task', type=str, default='unsupervised',
                         choices=['semi-supervised', 'unsupervised'],
                         help="Evaluation task type")
-    parser.add_argument('--results_path', type=str,
+    parser.add_argument('--results_path', default="output", type=str,
                         help="Path to folder containing the sequences folders results")
 
     return parser

@@ -43,7 +43,7 @@ class EndoVis2017Dataset(Dataset):
                 meta['frames'] = vid_frames
                 meta['frame_id'] = frame_id
                 if(self.all):
-                    meta['caption'] = "Surgical tool"  # all classes
+                    meta['caption'] = "Surgical Tools"  # all classes
                 else:
                     meta['caption'] = rev_category_dict.get(cls, "Other")
                 self.metas.append(meta)

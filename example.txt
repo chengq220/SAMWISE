@@ -1,0 +1,16 @@
+Training Command
+python main.py \
+    --dataset endovis2017 \
+    --name_exp endovis2017_all \
+    --result_path results/endovis2017_all/ \
+    --num_frames 8 \
+    --max_skip 1 \
+    --all True \
+    --epochs 5 \
+    --batch_size 2 \
+
+Inference Command
+!python inference.py \
+    --input_path data/endovis2017/val1/image \
+    --resume pretrain/pretrained_model.pth \
+    --text_prompts "Surgical Tools"

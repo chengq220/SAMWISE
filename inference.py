@@ -44,7 +44,7 @@ def main(args):
 
     # save path
     input_path = args.input_path
-    save_path_prefix = os.path.join('demo_output')
+    save_path_prefix = args.output_dir
     os.makedirs(save_path_prefix, exist_ok=True)
 
     start_time = time.time()
@@ -168,8 +168,8 @@ def check_args(args):
     args.image_level = False
     if os.path.isfile(args.input_path):
         ext = os.path.splitext(args.input_path)[1]
-        assert ext in ['.jpg', '.png', '.mp4', '.jpeg'], f"Provided file extension should be one of ['.jpg', '.png', '.mp4']"
-        if ext in ['.jpg', '.png', '.jpeg']: 
+        assert ext in ['.jpg', '.png', '.mp4', '.jpeg', '.bmp'], f"Provided file extension should be one of ['.jpg', '.png', '.mp4', '.jpeg', '.bmp']"
+        if ext in ['.jpg', '.png', '.jpeg', '.bmp']: 
             args.image_level = True
             pretrained_model = 'pretrain/pretrained_model.pth'
             pretrained_model_link = 'https://drive.google.com/file/d/1gRGzARDjIisZ3PnCW77Y9TMM_SbV8aaa/view?usp=drive_link'
