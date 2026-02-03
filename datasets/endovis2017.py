@@ -17,11 +17,12 @@ from datasets.categories import endovis2017_category_rev_dict as rev_category_di
 
 class EndoVis2017Dataset(Dataset):
     def __init__(self, img_folder: Path, transforms,
-                num_frames: int, max_skip: int):
+                num_frames: int, max_skip: int, all: bool):
         self.img_folder = img_folder
         self._transforms = transforms
         self.num_frames = num_frames
         self.max_skip = max_skip
+        self.all = all
         # create video meta data
         self.prepare_metas()
 
@@ -32,7 +33,7 @@ class EndoVis2017Dataset(Dataset):
         self.videos = list(Path(os.path.join(self.img_folder, "image")).glob("*"))
         self.metas = []
         for vid in self.videos:
-            vid_name = str(vid).split("\\")[-1] # for windows only, for linux you need / instead of \\
+            vid_name = str(vid).split("/")[-1] # for windows use \\, for linux use / 
             vid_frames = sorted(list(vid.glob("*"))) # gets the files in video idx and sort them in order
             vid_len = len(vid_frames)
             for frame_id in range(0, vid_len, self.num_frames):
@@ -41,7 +42,10 @@ class EndoVis2017Dataset(Dataset):
                 meta['video'] = vid_name
                 meta['frames'] = vid_frames
                 meta['frame_id'] = frame_id
-                meta['caption'] = rev_category_dict.get(cls, "Other")
+                if(self.all):
+                    meta['caption'] = "Surgical tool"  # all classes
+                else:
+                    meta['caption'] = rev_category_dict.get(cls, "Other")
                 self.metas.append(meta)
 
     @staticmethod
@@ -97,15 +101,18 @@ class EndoVis2017Dataset(Dataset):
             for j in range(self.num_frames):
                 frame_indx = sample_indx[j]
                 frame_path = frames[frame_indx]
-                frame_name = str(frame_path).split('\\')[-1]
+                frame_name = str(frame_path).split('/')[-1]
                 img_path = os.path.join(str(self.img_folder), 'image', video, frame_name)
                 mask_path = os.path.join(str(self.img_folder), 'label', video, frame_name)
                 img = Image.open(img_path).convert('RGB')
                 mask = Image.open(mask_path).convert('P')
                 # create the target
                 mask = np.array(mask)
-                cls = int(video[-1]) # the class that we are interested in
-                mask = (mask==cls).astype(np.float32) # 0,1 binary
+                if(self.all):
+                    mask = (mask>0).astype(np.float32)
+                else:
+                    cls = int(video[-1]) # the class that we are interested in
+                    mask = (mask==cls).astype(np.float32) # 0,1 binary
                 if (mask > 0).any():
                     y1, y2, x1, x2 = self.bounding_box(mask)
                     box = torch.tensor([x1, y1, x2, y2]).to(torch.float)
@@ -166,6 +173,6 @@ def build(image_set, args):
     }
     img_folder = PATHS[image_set]
     dataset = EndoVis2017Dataset(img_folder, transforms=make_coco_transforms(),
-                                num_frames=args.num_frames, max_skip=args.max_skip)
+                                num_frames=args.num_frames, max_skip=args.max_skip, all=args.all)
     
     return dataset
