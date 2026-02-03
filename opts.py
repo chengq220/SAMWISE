@@ -12,6 +12,8 @@ def get_args_parser():
                         help="Batch size for RIS evaluation")
     parser.add_argument('--num_frames', default=20, type=int,
                         help="Number of frames per training clip")
+    parser.add_argument('--max_skip', default=1, type=int,
+                        help="Number of frames to skip")
     parser.add_argument('--weight_decay', default=0, type=float,
                         help="Weight decay (L2 regularization)")
     parser.add_argument('--epochs', default=6, type=int,

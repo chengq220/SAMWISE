@@ -13,6 +13,7 @@ import numpy as np
 import random
 
 from datasets.categories import endovis2017_category_dict as category_dict
+from datasets.categories import endovis2017_category_rev_dict as rev_category_dict
 
 class EndoVis2017Dataset(Dataset):
     def __init__(self, img_folder: Path, transforms,
@@ -31,14 +32,16 @@ class EndoVis2017Dataset(Dataset):
         self.videos = list(Path(os.path.join(self.img_folder, "image")).glob("*"))
         self.metas = []
         for vid in self.videos:
-            vid_name = str(vid).split("/")[-1]
+            vid_name = str(vid).split("\\")[-1] # for windows only, for linux you need / instead of \\
             vid_frames = sorted(list(vid.glob("*"))) # gets the files in video idx and sort them in order
             vid_len = len(vid_frames)
             for frame_id in range(0, vid_len, self.num_frames):
                 meta = {}
+                cls = int(vid_name[-1])
                 meta['video'] = vid_name
                 meta['frames'] = vid_frames
                 meta['frame_id'] = frame_id
+                meta['caption'] = rev_category_dict.get(cls, "Other")
                 self.metas.append(meta)
 
     @staticmethod
@@ -57,8 +60,8 @@ class EndoVis2017Dataset(Dataset):
         while not instance_check:
             meta = self.metas[idx]  # dict
 
-            video, frames, frame_id = \
-                        meta['video'], meta['frames'], meta['frame_id']
+            video, frames, frame_id, cap = \
+                        meta['video'], meta['frames'], meta['frame_id'], meta['caption']
 
             vid_len = len(frames)
             num_frames = self.num_frames
@@ -94,7 +97,7 @@ class EndoVis2017Dataset(Dataset):
             for j in range(self.num_frames):
                 frame_indx = sample_indx[j]
                 frame_path = frames[frame_indx]
-                frame_name = str(frame_path).split('/')[-1]
+                frame_name = str(frame_path).split('\\')[-1]
                 img_path = os.path.join(str(self.img_folder), 'image', video, frame_name)
                 mask_path = os.path.join(str(self.img_folder), 'label', video, frame_name)
                 img = Image.open(img_path).convert('RGB')
@@ -129,7 +132,8 @@ class EndoVis2017Dataset(Dataset):
                 'masks': masks,                          # [T, H, W]
                 'valid': torch.tensor(valid),            # [T,]
                 'orig_size': torch.as_tensor([int(h), int(w)]),
-                'size': torch.as_tensor([int(h), int(w)])
+                'size': torch.as_tensor([int(h), int(w)]),
+                'caption': cap,
             }
 
             # "boxes" normalize to [0, 1] and transform from xyxy to cxcywh in self._transform
@@ -163,4 +167,5 @@ def build(image_set, args):
     img_folder = PATHS[image_set]
     dataset = EndoVis2017Dataset(img_folder, transforms=make_coco_transforms(),
                                 num_frames=args.num_frames, max_skip=args.max_skip)
+    
     return dataset
