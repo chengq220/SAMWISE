@@ -11,6 +11,7 @@ from PIL import Image
 
 import numpy as np
 import random
+from collections import defaultdict
 
 from datasets.categories import endovis2017_category_rev_dict as rev_category_dict
 
@@ -28,25 +29,28 @@ class EndoVis2017Dataset(Dataset):
         print('\n')
 
     def prepare_metas(self):
-        self.videos = list(Path(os.path.join(self.img_folder, "image")).glob("*"))
+        self.videos = defaultdict(list)
+        video_list = list(Path(os.path.join(self.img_folder, "image")).glob("*"))
+
+        for vid in video_list:
+            vid_name = vid.name
+            vid_num = vid_name.split("_")[1]
+            self.videos[vid_num].append(vid)
         self.metas = []
-        for vid in self.videos:
-            vid_name = str(vid).split("/")[-1]
-            vid_frames = sorted(list(vid.glob("*"))) # gets the files in video idx and sort them in order
+        for vid_key in self.videos.keys():
+            vid_frames = sorted(list(self.videos[vid_key])) # gets the files in video idx and sort them in order
             vid_len = len(vid_frames)
             for frame_id in range(0, vid_len, self.num_frames): # Get each frame
                 cur_frame = vid_frames[frame_id]
                 frame_name = str(cur_frame).split("/")[-1]
-                mask_path = os.path.join(str(self.img_folder), 'label', vid_name, frame_name)
+                mask_path = os.path.join(str(self.img_folder), 'label', frame_name)
                 mask = Image.open(mask_path).convert('P')
-                mask = np.array(mask)
+                mask = np.array(mask) # Treat 0 as segment all tools while greater 0 represent segement specific tools
                 category = np.unique(mask)
                 category = category[category > 0]
-                
-                # Treat 0 as segment all tools while greater 0 represent segement specific tools
                 for cls in category:
                     meta = {}
-                    meta['video'] = vid_name
+                    meta['video'] = vid_key
                     meta['frames'] = vid_frames
                     meta['frame_id'] = frame_id
                     meta['caption'] = cls
