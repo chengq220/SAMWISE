@@ -12,12 +12,11 @@ from PIL import Image
 import numpy as np
 import random
 
-from datasets.categories import endovis2017_category_dict as category_dict
 from datasets.categories import endovis2017_category_rev_dict as rev_category_dict
 
 class EndoVis2017Dataset(Dataset):
     def __init__(self, img_folder: Path, transforms,
-                num_frames: int, max_skip: int, all: bool):
+                num_frames: int, max_skip: int):
         self.img_folder = img_folder
         self._transforms = transforms
         self.num_frames = num_frames
@@ -174,7 +173,7 @@ def build(image_set, args):
         "val": (root / "val1"),    # not used actually
     }
     img_folder = PATHS[image_set]
-    dataset = EndoVis2017Dataset(img_folder, transforms=make_coco_transforms(),
-                                num_frames=args.num_frames, max_skip=args.max_skip, all=args.all)
+    dataset = EndoVis2017Dataset(img_folder, transforms=make_transforms(),
+                                num_frames=args.num_frames, max_skip=args.max_skip)
     
     return dataset
