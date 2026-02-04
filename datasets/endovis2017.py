@@ -38,7 +38,7 @@ class EndoVis2017Dataset(Dataset):
             vid_len = len(vid_frames)
             for frame_id in range(0, vid_len, self.num_frames):
                 meta = {}
-                cls = int(vid_name[-1])
+                cls = int(vid_name[-1]) # this is incorrect
                 meta['video'] = vid_name
                 meta['frames'] = vid_frames
                 meta['frame_id'] = frame_id
