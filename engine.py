@@ -98,26 +98,23 @@ def eval_endovis2017(args,
     all_gt = []
     for samples, targets in data_loader:
         samples = samples.to(device)
-        captions = [t["caption"] for t in targets]
-        gt = torch.tensor([t["masks"] for t in targets]).to(device)
-
         targets = utils.targets_to(targets, device)
+
+        captions = [t["caption"] for t in targets]
+        gt = torch.stack([t["masks"] for t in targets])
 
         outputs = model(samples, captions, targets)
         pred_masks = torch.cat(outputs["masks"])
-        pred_masks = pred_masks.unsqueeze(0) 
-        pred_masks = (pred_masks.sigmoid() > args.threshold)[0]
+        pred_masks = (pred_masks.sigmoid() > args.threshold)
         
         all_pred_masks.append(pred_masks)
         all_gt.append(gt)
-
 
     # store the video results
     all_pred_masks = torch.cat(all_pred_masks, dim=0)
     all_gt = torch.cat(all_gt, dim=0)
 
     iou = metric(all_pred_masks, all_gt)
-
 
     end_time = time.time()
     total_time = end_time - start_time
