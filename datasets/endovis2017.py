@@ -21,7 +21,6 @@ class EndoVis2017Dataset(Dataset):
         self._transforms = transforms
         self.num_frames = num_frames
         self.max_skip = max_skip
-        self.all = all
         # create video meta data
         self.prepare_metas()
 
@@ -40,8 +39,10 @@ class EndoVis2017Dataset(Dataset):
                 frame_name = str(cur_frame).split("/")[-1]
                 mask_path = os.path.join(str(self.img_folder), 'label', vid_name, frame_name)
                 mask = Image.open(mask_path).convert('P')
-                mask = np.array(mask) # Treat 0 as segment all tools while greater 0 represent segement specific tools
+                mask = np.array(mask)
                 category = np.unique(mask)
+                
+                # Treat 0 as segment all tools while greater 0 represent segement specific tools
                 for cls in category:
                     meta = {}
                     meta['video'] = vid_name
