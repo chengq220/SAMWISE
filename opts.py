@@ -92,7 +92,7 @@ def get_args_parser():
     # Testing and evaluation settings
     parser.add_argument('--threshold', default=0.5, type=float,
                         help="Threshold for binary mask predictions")
-    parser.add_argument('--split', default='valid', type=str, choices=['valid', 'valid_u', 'test'],
+    parser.add_argument('--split', default='val1', type=str,
                         help="Dataset split for evaluation")
     parser.add_argument('--visualize', action='store_true',
                         help="Enable mask visualization during inference")

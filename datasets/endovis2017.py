@@ -41,6 +41,7 @@ class EndoVis2017Dataset(Dataset):
                 mask = Image.open(mask_path).convert('P')
                 mask = np.array(mask)
                 category = np.unique(mask)
+                category = category[category > 0]
                 
                 # Treat 0 as segment all tools while greater 0 represent segement specific tools
                 for cls in category:
@@ -111,11 +112,10 @@ class EndoVis2017Dataset(Dataset):
                 mask = Image.open(mask_path).convert('P')
                 # create the target
                 mask = np.array(mask)
-                cls = caption # 0 means all surgical tools, while all other are individual surgicial tools
-                if(cls == 0):
-                    mask = (mask>0).astype(np.float32)
-                else:
-                    mask = (mask==cls).astype(np.float32) 
+                
+                cls = caption
+
+                mask = (mask==cls).astype(np.float32) 
                 if (mask > 0).any():
                     y1, y2, x1, x2 = self.bounding_box(mask)
                     box = torch.tensor([x1, y1, x2, y2]).to(torch.float)

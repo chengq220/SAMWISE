@@ -2,6 +2,8 @@
 Inference code for SAMWISE, on Ref-Youtube-VOS
 Modified from DETR (https://github.com/facebookresearch/detr)
 '''
+
+import pandas as pd
 import argparse
 import random
 import time
@@ -66,7 +68,6 @@ def main(args):
     end_time = time.time()
     total_time = end_time - start_time
     print("Total inference time: %.4f s" %(total_time))
-
 
 def extract_frames_from_mp4(video_path):
     extract_folder = 'frames_' + os.path.basename(video_path).split('.')[0]
