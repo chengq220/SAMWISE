@@ -9,8 +9,6 @@ import os
 import sys
 from typing import Iterable
 from time import time
-import numpy as np
-import random
 import torch
 import util.misc as utils
 from torch.nn import functional as F

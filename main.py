@@ -145,9 +145,9 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             sampler_train.set_epoch(epoch)
-        train_stats = train_one_epoch(
-                    model, data_loader_train, optimizer, device, epoch,
-                    args.clip_max_norm, lr_scheduler=lr_scheduler, args=args)
+        # train_stats = train_one_epoch(
+        #             model, data_loader_train, optimizer, device, epoch,
+        #             args.clip_max_norm, lr_scheduler=lr_scheduler, args=args)
         
         eval_endovis2017(args,
                         model, 
