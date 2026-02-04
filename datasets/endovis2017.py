@@ -33,20 +33,23 @@ class EndoVis2017Dataset(Dataset):
         self.videos = list(Path(os.path.join(self.img_folder, "image")).glob("*"))
         self.metas = []
         for vid in self.videos:
-            vid_name = str(vid).split("/")[-1] # for windows use \\, for linux use / 
+            vid_name = str(vid).split("/")[-1]
             vid_frames = sorted(list(vid.glob("*"))) # gets the files in video idx and sort them in order
             vid_len = len(vid_frames)
-            for frame_id in range(0, vid_len, self.num_frames):
-                meta = {}
-                cls = int(vid_name[-1]) # this is incorrect
-                meta['video'] = vid_name
-                meta['frames'] = vid_frames
-                meta['frame_id'] = frame_id
-                if(self.all):
-                    meta['caption'] = "Surgical Tools"  # all classes
-                else:
-                    meta['caption'] = rev_category_dict.get(cls, "Other")
-                self.metas.append(meta)
+            for frame_id in range(0, vid_len, self.num_frames): # Get each frame
+                cur_frame = vid_frames[frame_id]
+                frame_name = str(cur_frame).split("/")[-1]
+                mask_path = os.path.join(str(self.img_folder), 'label', vid_name, frame_name)
+                mask = Image.open(mask_path).convert('P')
+                mask = np.array(mask) # Treat 0 as segment all tools while greater 0 represent segement specific tools
+                category = np.unique(mask)
+                for cls in category:
+                    meta = {}
+                    meta['video'] = vid_name
+                    meta['frames'] = vid_frames
+                    meta['frame_id'] = frame_id
+                    meta['caption'] = cls
+                    self.metas.append(meta)
 
     @staticmethod
     def bounding_box(img):
@@ -64,7 +67,7 @@ class EndoVis2017Dataset(Dataset):
         while not instance_check:
             meta = self.metas[idx]  # dict
 
-            video, frames, frame_id, cap = \
+            video, frames, frame_id, caption = \
                         meta['video'], meta['frames'], meta['frame_id'], meta['caption']
 
             vid_len = len(frames)
@@ -108,11 +111,11 @@ class EndoVis2017Dataset(Dataset):
                 mask = Image.open(mask_path).convert('P')
                 # create the target
                 mask = np.array(mask)
-                if(self.all):
+                cls = caption # 0 means all surgical tools, while all other are individual surgicial tools
+                if(cls == 0):
                     mask = (mask>0).astype(np.float32)
                 else:
-                    cls = int(video[-1]) # the class that we are interested in
-                    mask = (mask==cls).astype(np.float32) # 0,1 binary
+                    mask = (mask==cls).astype(np.float32) 
                 if (mask > 0).any():
                     y1, y2, x1, x2 = self.bounding_box(mask)
                     box = torch.tensor([x1, y1, x2, y2]).to(torch.float)
@@ -140,14 +143,13 @@ class EndoVis2017Dataset(Dataset):
                 'valid': torch.tensor(valid),            # [T,]
                 'orig_size': torch.as_tensor([int(h), int(w)]),
                 'size': torch.as_tensor([int(h), int(w)]),
-                'caption': cap,
+                'caption': rev_category_dict.get(cls, "All Surgicial Tools"),
             }
 
             # "boxes" normalize to [0, 1] and transform from xyxy to cxcywh in self._transform
             imgs, target = self._transforms(imgs, target)
             imgs = torch.stack(imgs, dim=0) # [T, 3, H, W]
 
-            # FIXME: handle "valid", since some box may be removed due to random crop
             if torch.any(target['valid'] == 1):  # at leatst one instance
                 instance_check = True
             else:
@@ -155,7 +157,7 @@ class EndoVis2017Dataset(Dataset):
 
         return imgs, target
 
-def make_coco_transforms():
+def make_transforms():
     normalize = T.Compose([
         T.ToTensor(),
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])

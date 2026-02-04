@@ -9,7 +9,7 @@ python main.py \
     --batch_size 2 
 
 Inference Command
-!python inference.py \
+python inference.py \
     --input_path data/endovis2017/val1/image \
-    --resume pretrain/pretrained_model.pth \
+    --resume output/endovis2017_all/checkpoint0004.pth \
     --text_prompts "Surgical Tools"
