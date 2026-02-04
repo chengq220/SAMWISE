@@ -90,11 +90,21 @@ def main(args):
     data_loader_train = DataLoader(dataset_train, batch_sampler=batch_sampler_train,
                                    collate_fn=utils.collate_fn, num_workers=args.num_workers)
     
-    # dataset eval    
+
     root = Path(args.endovis2017)  # data/endovis2017
-    img_folder = os.path.join(root, args.split)
-    dataset_eval = build_dataset(img_folder, image_set="val", args=args)
-    data_loader_eval = DataLoader(dataset_eval, collate_fn=utils.collate_fn, num_workers=args.num_workers)
+    eval_folder = os.path.join(root, args.split)
+    dataset_val = build_dataset(eval_folder, image_set="val", args=args)
+    sampler_val = (
+        samplers.DistributedSampler(dataset_val, shuffle=False) if args.distributed else torch.utils.data.SequentialSampler(dataset_val)
+    )
+    data_loader_val = DataLoader(
+        dataset_val,
+        args.batch_size_val,
+        sampler=sampler_val,
+        drop_last=False,
+        collate_fn=utils.collate_fn,
+        num_workers=args.num_workers,
+    )
 
     output_dir = Path(args.output_dir)
     if args.resume:
@@ -139,11 +149,10 @@ def main(args):
                     model, data_loader_train, optimizer, device, epoch,
                     args.clip_max_norm, lr_scheduler=lr_scheduler, args=args)
         
-        save_path_prefix = os.path.join(save_path_prefix, "evaluate", args.split)
-        os.makedirs(save_path_prefix, exist_ok=True)
-        evaluate_model = eval_endovis2017(model, 
-                                          data_loader_eval, 
-                                          save_path_prefix)
+        eval_endovis2017(args,
+                        model, 
+                        device,
+                        data_loader_val)
 
         if args.output_dir:
             print("Save Model")
