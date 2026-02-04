@@ -16,7 +16,7 @@ import util.misc as utils
 from util.misc import on_load_checkpoint
 import datasets.samplers as samplers
 from datasets import build_dataset
-from engine import train_one_epoch
+from engine import train_one_epoch, eval_endovis2017
 from models.samwise import build_samwise
 from os.path import join
 import sys
@@ -77,8 +77,8 @@ def main(args):
     optimizer = torch.optim.AdamW(param_list, lr=args.lr, weight_decay=args.weight_decay)
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, args.lr_drop)
 
+    # dataset train
     dataset_train = build_dataset(args.dataset_file, image_set="train", args=args)
-
     args.batch_size = int(args.batch_size / args.ngpu)
     if args.distributed:
         sampler_train = samplers.DistributedSampler(dataset_train)
@@ -89,6 +89,12 @@ def main(args):
 
     data_loader_train = DataLoader(dataset_train, batch_sampler=batch_sampler_train,
                                    collate_fn=utils.collate_fn, num_workers=args.num_workers)
+    
+    # dataset eval    
+    root = Path(args.endovis2017)  # data/endovis2017
+    img_folder = os.path.join(root, args.split)
+    dataset_eval = build_dataset(img_folder, image_set="val", args=args)
+    data_loader_eval = DataLoader(dataset_eval, collate_fn=utils.collate_fn, num_workers=args.num_workers)
 
     output_dir = Path(args.output_dir)
     if args.resume:
@@ -132,6 +138,12 @@ def main(args):
         train_stats = train_one_epoch(
                     model, data_loader_train, optimizer, device, epoch,
                     args.clip_max_norm, lr_scheduler=lr_scheduler, args=args)
+        
+        save_path_prefix = os.path.join(save_path_prefix, "evaluate", args.split)
+        os.makedirs(save_path_prefix, exist_ok=True)
+        evaluate_model = eval_endovis2017(model, 
+                                          data_loader_eval, 
+                                          save_path_prefix)
 
         if args.output_dir:
             print("Save Model")

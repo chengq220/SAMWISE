@@ -175,7 +175,7 @@ def build(image_set, args):
     assert root.exists(), f'provided path {root} does not exist'
     PATHS = {
         "train": (root / "train"),
-        "val": (root / "val1"),    # not used actually
+        "val": (root / args.split),
     }
     img_folder = PATHS[image_set]
     dataset = EndoVis2017Dataset(img_folder, transforms=make_transforms(),

@@ -16,6 +16,7 @@ import Path
 import util.misc as utils
 from torch.nn import functional as F
 from models.segmentation import loss_masks
+from datasets import build_dataset
 
 def train_one_epoch(model: torch.nn.Module,
                     data_loader: Iterable, optimizer: torch.optim.Optimizer,
@@ -72,7 +73,6 @@ def train_one_epoch(model: torch.nn.Module,
         optimizer.step()
         lr_scheduler.step()
 
-
         metric_logger.update(loss=loss_value, **loss_dict_reduced_scaled, **loss_dict_reduced_unscaled)
         metric_logger.update(lr=optimizer.param_groups[0]["lr"])
         metric_logger.update(grad_norm=grad_total_norm)
@@ -83,3 +83,35 @@ def train_one_epoch(model: torch.nn.Module,
     print("Averaged stats:", metric_logger)
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
+@torch.no_grad()
+def eval_endovis2017(args,
+                    model: torch.nn.Module,
+                    data_loader: Iterable,
+                    save_path_prefix: str):
+    model.eval()
+    print("Evaluation only supports for batch size = 1")
+    seed = args.seed + utils.get_rank()
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+
+    # save path
+    os.makedirs(save_path_prefix, exist_ok=True)
+
+    # load data
+    start_time = time.time()
+    print('Start Evaluation')
+
+    # Build the evaluation dataset
+    
+    for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
+        step+=1
+        model.train()
+        samples = samples.to(device)
+        captions = [t["caption"] for t in targets]
+        outputs = model(samples, captions, targets)
+
+    end_time = time.time()
+    total_time = end_time - start_time
+
+    print(f"Total inference time: {total_time:.2f} s")
