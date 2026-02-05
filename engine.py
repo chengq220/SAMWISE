@@ -86,7 +86,7 @@ def eval_endovis2017(args,
                      device: torch.device,
                      data_loader: Iterable):
     model.train()
-    metric = BinaryJaccardIndex()
+    metric = BinaryJaccardIndex().to(device)
 
     # load data
     start_time = time.time()
