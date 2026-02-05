@@ -96,6 +96,7 @@ def eval_endovis2017(args,
     all_gt = []
     for samples, targets in data_loader:
         samples = samples.to(device)
+        print(targets[0])
         targets = utils.targets_to(targets, device)
         print(targets[0])
 
