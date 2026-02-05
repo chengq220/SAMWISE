@@ -8,7 +8,7 @@ import math
 import os
 import sys
 from typing import Iterable
-from time import time
+import time
 import torch
 import util.misc as utils
 from torch.nn import functional as F
