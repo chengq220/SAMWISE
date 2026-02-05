@@ -4,7 +4,6 @@ python main.py \
     --name_exp endovis2017_all \
     --num_frames 8 \
     --max_skip 1 \
-    --all True \
     --epochs 5 \
     --batch_size 2 
 
