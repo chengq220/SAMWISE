@@ -91,21 +91,6 @@ def main(args):
                                    collate_fn=utils.collate_fn, num_workers=args.num_workers)
     
 
-    root = Path(args.endovis2017)  # data/endovis2017
-    eval_folder = os.path.join(root, args.split)
-    dataset_val = build_dataset(eval_folder, image_set="val", args=args)
-    sampler_val = (
-        samplers.DistributedSampler(dataset_val, shuffle=False) if args.distributed else torch.utils.data.SequentialSampler(dataset_val)
-    )
-    data_loader_val = DataLoader(
-        dataset_val,
-        args.batch_size_val,
-        sampler=sampler_val,
-        drop_last=False,
-        collate_fn=utils.collate_fn,
-        num_workers=args.num_workers,
-    )
-
     output_dir = Path(args.output_dir)
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')
@@ -148,11 +133,6 @@ def main(args):
         train_stats = train_one_epoch(
                     model, data_loader_train, optimizer, device, epoch,
                     args.clip_max_norm, lr_scheduler=lr_scheduler, args=args)
-        
-        # eval_endovis2017(args,
-        #                 model, 
-        #                 device,
-        #                 data_loader_val)
 
         if args.output_dir:
             print("Save Model")
