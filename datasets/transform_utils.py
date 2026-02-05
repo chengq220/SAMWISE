@@ -8,6 +8,7 @@ import numpy as np
 import torch
 from tools.colormap import colormap
 import os
+from datasets.categories import endovis2017_category_rev_dict as rev_category_dict
 
 # colormap
 color_list = colormap()
@@ -158,3 +159,33 @@ class VideoEvalDataset(Dataset):
         img = Image.open(img_path).convert('RGB')
         
         return self.transform(img), idx
+
+
+
+# class VideoEvalDatasetWithMasks(Dataset):
+#     def __init__(self, vid_folder, frames, ext='.bmp', max_size=512):
+#         super().__init__()
+#         self.vid_folder = vid_folder
+#         self.frames = frames
+#         self.vid_len = len(frames)
+#         self.ext = ext
+#         self.origin_w, self.origin_h = Image.open(join(vid_folder, frames[0]+ext)).size
+#         self.transform = TF.Compose([
+#             TF.Resize(max_size-4, max_size=max_size), #T.Resize(360),
+#             TF.ToTensor(),
+#             TF.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+#         ])
+            
+#     def __len__(self):
+#         return self.vid_len
+    
+#     def __getitem__(self, idx):
+#         frame = self.frames[idx]
+#         img_path = join(self.vid_folder, frame + self.ext)
+#         mask_path = join(self.vid_folder, frame + self.ext)
+#         img = Image.open(img_path).convert('RGB')
+#         mask = Image.open(mask_path).convert('P')
+#         cls = frame.
+#         prompt = rev_category_dict.get(cls, "All Surgicial Tools"),
+        
+#         return self.transform(img), mask, idx, prompt

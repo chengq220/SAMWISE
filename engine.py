@@ -14,6 +14,10 @@ import util.misc as utils
 from torch.nn import functional as F
 from models.segmentation import loss_masks
 from torchmetrics.classification import BinaryJaccardIndex
+from torch.utils.data import DataLoader
+from datasets.transform_utils import VideoEvalDatasetWithMasks
+from tqdm import tqdm 
+
 
 def train_one_epoch(model: torch.nn.Module,
                     data_loader: Iterable, optimizer: torch.optim.Optimizer,
@@ -79,42 +83,92 @@ def train_one_epoch(model: torch.nn.Module,
     metric_logger.synchronize_between_processes()
     print("Averaged stats:", metric_logger)
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
-
-@torch.no_grad()
-def eval_endovis2017(args, 
-                     model: torch.nn.Module,
-                     device: torch.device,
-                     data_loader: Iterable):
-    model.train()
-    metric = BinaryJaccardIndex().to(device)
-
-    # load data
-    start_time = time.time()
-    print('Start Evaluation')
-
-    all_pred_masks = []
-    all_gt = []
-    for samples, targets in data_loader:
-        samples = samples.to(device)
-        captions = [t["caption"] for t in targets]
-        gt = torch.stack([t["masks"] for t in targets]).permute(1, 0, 2, 3).to(device)
-        outputs = model(samples, captions, targets)
-        pred_masks = torch.cat(outputs["masks"])
-        pred_masks = (pred_masks.sigmoid() > args.threshold)
-        print(gt.shape)
-        print(pred_masks.shape)
-        
     
-        all_pred_masks.append(pred_masks)
-        all_gt.append(gt)
 
-    # store the video results
-    all_pred_masks = torch.cat(all_pred_masks, dim=0)
-    all_gt = torch.cat(all_gt, dim=0)
+# @torch.no_grad()
+# def eval_endovis2017(args, 
+#                      model: torch.nn.Module,
+#                      device: torch.device,
+#                      vd: torch.Dataset,
+#                      dim: tuple):
+#     model.eval()
+#     metric = BinaryJaccardIndex().to(device)
 
-    iou = metric(all_pred_masks, all_gt)
+#     # load data
+#     path = os.path.join(args.endovis2017, args.split)
+#     fname, ext = os.path.splitext(in_path)
+#     frames_list = [os.path.basename(fname)]
+#     frames_folder = os.path.dirname(in_path)
 
-    end_time = time.time()
-    total_time = end_time - start_time
-    print(f"Evaluation IoU: {iou:.4f}")
-    print(f"Total Evaluation time: {total_time:.2f} s")
+#     vd = VideoEvalDatasetWithMasks(frames_folder, frames_list, ext=ext)
+#     dl = DataLoader(vd, batch_size=args.eval_clip_window, num_workers=args.num_workers, shuffle=False)
+
+#     start_time = time.time()
+#     print('Start Evaluation')
+
+#     all_pred_masks = []
+#     all_gt = []
+#     origin_w, origin_h = dim
+#     for imgs, masks, clip_frames_ids, prompt in tqdm(dl):
+#         clip_frames_ids = clip_frames_ids.tolist()
+#         imgs = imgs.to(args.device)  # [eval_clip_window, 3, h, w]
+#         img_h, img_w = imgs.shape[-2:]
+#         size = torch.as_tensor([int(img_h), int(img_w)]).to(args.device)
+#         target = {"size": size, 'frame_ids': clip_frames_ids}
+
+#         with torch.no_grad():
+#             outputs = model([imgs], [text_prompt], [target])
+
+#         pred_masks = outputs["pred_masks"]  # [t, q, h, w]
+#         pred_masks = pred_masks.unsqueeze(0)
+#         pred_masks = F.interpolate(pred_masks, size=(origin_h, origin_w), mode='bilinear', align_corners=False) 
+#         pred_masks = (pred_masks.sigmoid() > args.threshold)[0].cpu() 
+#         all_pred_masks.append(pred_masks)
+
+#     # store the video results
+#     all_pred_masks = torch.cat(all_pred_masks, dim=0)
+#     all_gt = torch.cat(all_gt, dim=0)
+
+#     iou = metric(all_pred_masks, all_gt)
+
+#     end_time = time.time()
+#     total_time = end_time - start_time
+#     print(f"Evaluation IoU: {iou:.4f}")
+#     print(f"Total Evaluation time: {total_time:.2f} s")
+    
+# @torch.no_grad()
+# def eval_endovis2017(args, 
+#                      model: torch.nn.Module,
+#                      device: torch.device,
+#                      data_loader: Iterable):
+#     model.eval()
+#     metric = BinaryJaccardIndex().to(device)
+
+#     # load data
+#     start_time = time.time()
+#     print('Start Evaluation')
+
+#     all_pred_masks = []
+#     all_gt = []
+#     for samples, targets in data_loader:
+#         samples = samples.to(device)
+#         captions = [t["caption"] for t in targets]
+#         gt = torch.stack([t["masks"] for t in targets]).permute(1, 0, 2, 3).to(device)
+        
+#         outputs = model(samples, captions, targets)
+#         pred_masks = torch.cat(outputs["masks"])
+#         pred_masks = (pred_masks.sigmoid() > args.threshold)
+    
+#         all_pred_masks.append(pred_masks)
+#         all_gt.append(gt)
+
+#     # store the video results
+#     all_pred_masks = torch.cat(all_pred_masks, dim=0)
+#     all_gt = torch.cat(all_gt, dim=0)
+
+#     iou = metric(all_pred_masks, all_gt)
+
+#     end_time = time.time()
+#     total_time = end_time - start_time
+#     print(f"Evaluation IoU: {iou:.4f}")
+#     print(f"Total Evaluation time: {total_time:.2f} s")
