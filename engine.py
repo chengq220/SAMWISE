@@ -102,7 +102,10 @@ def eval_endovis2017(args,
         outputs = model(samples, captions, targets)
         pred_masks = torch.cat(outputs["masks"])
         pred_masks = (pred_masks.sigmoid() > args.threshold)
+        print(gt.shape)
+        print(pred_masks.shape)
         
+    
         all_pred_masks.append(pred_masks)
         all_gt.append(gt)
 
