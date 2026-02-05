@@ -97,9 +97,7 @@ def eval_endovis2017(args,
     for samples, targets in data_loader:
         samples = samples.to(device)
         captions = [t["caption"] for t in targets]
-
         gt = torch.stack([t["masks"] for t in targets])
-        # print(targets)
 
         outputs = model(samples, captions, targets)
         pred_masks = torch.cat(outputs["masks"])
