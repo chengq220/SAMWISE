@@ -97,8 +97,7 @@ def eval_endovis2017(args,
     for samples, targets in data_loader:
         samples = samples.to(device)
         captions = [t["caption"] for t in targets]
-        gt = torch.stack([t["masks"] for t in targets])
-
+        gt = torch.stack([t["masks"] for t in targets]).permute(1, 0, 2, 3)
         outputs = model(samples, captions, targets)
         pred_masks = torch.cat(outputs["masks"])
         pred_masks = (pred_masks.sigmoid() > args.threshold)
