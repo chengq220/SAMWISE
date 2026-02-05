@@ -15,7 +15,7 @@ from torch.nn import functional as F
 from models.segmentation import loss_masks
 from torchmetrics.classification import BinaryJaccardIndex
 from torch.utils.data import DataLoader
-# from datasets.transform_utils import VideoEvalDatasetWithMasks
+from datasets.transform_utils import VideoEvalDatasetWithMasks
 from tqdm import tqdm 
 
 

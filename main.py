@@ -16,7 +16,7 @@ import util.misc as utils
 from util.misc import on_load_checkpoint
 import datasets.samplers as samplers
 from datasets import build_dataset
-from engine import train_one_epoch, eval_endovis2017
+from engine import train_one_epoch
 from models.samwise import build_samwise
 from os.path import join
 import sys
