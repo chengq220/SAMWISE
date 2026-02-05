@@ -85,7 +85,7 @@ def eval_endovis2017(args,
                      model: torch.nn.Module,
                      device: torch.device,
                      data_loader: Iterable):
-    model.eval()
+    model.train()
     metric = BinaryJaccardIndex()
 
     # load data
