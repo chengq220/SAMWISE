@@ -110,8 +110,8 @@ class EndoVis2017Dataset(Dataset):
                 frame_indx = sample_indx[j]
                 frame_path = frames[frame_indx]
                 frame_name = str(frame_path).split('/')[-1]
-                img_path = os.path.join(str(self.img_folder), 'image', video, frame_name)
-                mask_path = os.path.join(str(self.img_folder), 'label', video, frame_name)
+                img_path = os.path.join(str(self.img_folder), 'image', frame_name)
+                mask_path = os.path.join(str(self.img_folder), 'label', frame_name)
                 img = Image.open(img_path).convert('RGB')
                 mask = Image.open(mask_path).convert('P')
                 # create the target
