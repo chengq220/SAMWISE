@@ -109,6 +109,7 @@ def evaluate(args):
         all_gt_masks = torch.cat(all_gt_masks, dim=0)
 
         iou, intersection, union = compute_mask_iou(all_pred_masks, all_gt_masks)
+        print(iou.shape)
         print(f"Evaluation IoU for class {text_prompt}: {iou.item():.4f}")
     end_time = time.time()
     total_time = end_time - start_time
