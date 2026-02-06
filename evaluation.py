@@ -102,8 +102,8 @@ def evaluate(args):
             masks_cls = (masks==cls).bool()
             all_gt_masks.append(masks_cls)
 
-        all_pred_masks = torch.cat(all_pred_masks, dim=0)
-        all_gt_masks = torch.cat(all_gt_masks, dim=0).squeeze()
+        all_pred_masks = torch.cat(all_pred_masks, dim=0).numpy()
+        all_gt_masks = torch.cat(all_gt_masks, dim=0).squeeze().numpy()
 
         iou = db_eval_iou(all_gt_masks, all_pred_masks)
         print(iou.shape)

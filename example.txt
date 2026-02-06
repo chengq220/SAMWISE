@@ -11,7 +11,7 @@ Evaluation Command
 python evaluate.py \
     --model output/demo/model.pth \
     --file_path data/endovis2017/val1 \
-    --batch 2
+    --num_frames 4
 
 Inference Command
 python inference.py \
