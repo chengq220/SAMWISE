@@ -107,9 +107,12 @@ def evaluate(args):
 
         # store the video results
         all_pred_masks = torch.cat(all_pred_masks, dim=0)
-        all_gt_masks = torch.cat(all_gt_masks, dim=0)
+        print(all_pred_masks.shape)
 
-        metric = BinaryJaccardIndex().to(device)
+        all_gt_masks = torch.cat(all_gt_masks, dim=0)
+        print(all_gt_masks.shape)
+
+        metric = BinaryJaccardIndex()
         iou = metric(all_pred_masks, all_gt_masks)
         print(f"Evaluation IoU for class {text_prompt}: {iou:.4f}")
     end_time = time.time()
