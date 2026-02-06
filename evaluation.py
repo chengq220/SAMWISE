@@ -71,7 +71,7 @@ def evaluate(args):
     start_time = time.time()
     print(f'Begin Evaluation')
 
-    text_prompts = endovis2017_category_dict.keys()
+    text_prompts = list(endovis2017_category_dict.keys())
     for i in range(len(text_prompts)):
         text_prompt = text_prompts[i]
 
