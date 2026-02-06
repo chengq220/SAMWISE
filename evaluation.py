@@ -60,10 +60,9 @@ def evaluate(args):
     device = torch.device(args.device)
     model = build_samwise(args)
     model.to(device)
-    if args.distributed:
-        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
-        model_without_ddp = model.module
-        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
+    model_without_ddp = model.module
+    model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
     checkpoint = torch.load(args.resume, map_location='cpu')
     checkpoint = on_load_checkpoint(model_without_ddp, checkpoint)
