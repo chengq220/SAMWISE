@@ -60,9 +60,7 @@ def evaluate(args):
     device = torch.device(args.device)
     model = build_samwise(args)
     model.to(device)
-    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
     model_without_ddp = model.module
-    model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
     checkpoint = torch.load(args.resume, map_location='cpu')
     checkpoint = on_load_checkpoint(model_without_ddp, checkpoint)
@@ -72,7 +70,6 @@ def evaluate(args):
     model.eval()
     start_time = time.time()
     print(f'Begin Evaluation')
-    # For each expression
 
     text_prompts = endovis2017_category_dict.keys()
     for i in range(len(text_prompts)):
