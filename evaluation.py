@@ -34,8 +34,7 @@ class EvalDataset(Dataset):
         ])
             
     def __len__(self):
-        # return self.vid_len
-        return 1
+        return self.vid_len
     
     def __getitem__(self, idx):
         frame = self.frames[idx]
