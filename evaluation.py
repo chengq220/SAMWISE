@@ -82,7 +82,7 @@ def evaluate(args):
         all_pred_masks = []
         all_gt_masks = []
         vd = EvalDataset(args.file_path)
-        dl = DataLoader(vd, batch_size=args.eval_clip_window, num_workers=args.num_workers, shuffle=False)
+        dl = DataLoader(vd, batch_size=args.batch, num_workers=args.num_workers, shuffle=False)
         origin_w, origin_h = vd.origin_w, vd.origin_h
         
         # 3. for each clip
@@ -162,7 +162,7 @@ if __name__ == '__main__':
     parser.add_argument("--file_path", type = str, default = None, required=True, help="The path to the evaluation images")
     parser.add_argument("--save_path", type = str, default = "output/default", help="directory to save the results/logs")
     parser.add_argument("--batch", type = int, default = 6, help="dataset batch size")
-    parser.add_argument("--num_worker", type = int, default = 1, help="Number of workers")
+    parser.add_argument("--num_workers", type = int, default = 1, help="Number of workers")
 
     args = parser.parse_args()
     evaluate(args)
