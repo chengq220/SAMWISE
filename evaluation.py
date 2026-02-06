@@ -100,15 +100,13 @@ def evaluate(args):
             pred_masks = pred_masks.unsqueeze(0)
             pred_masks = F.interpolate(pred_masks, size=(origin_h, origin_w), mode='bilinear', align_corners=False) 
             pred_masks = (pred_masks.sigmoid() > args.threshold)[0].cpu() 
-            print(pred_masks.type())
-            print(masks.type())
             all_pred_masks.append(pred_masks)
 
-            masks_cls = (masks==cls).float()
+            masks_cls = (masks==cls).bool()
             all_gt_masks.append(masks_cls)
 
         all_pred_masks = torch.cat(all_pred_masks, dim=0)
-        all_gt_masks = torch.cat(all_gt_masks, dim=0).squeeze()
+        all_gt_masks = torch.cat(all_gt_masks, dim=0)
 
         iou, intersection, union = compute_mask_iou(all_pred_masks, all_gt_masks)
         print(f"Evaluation IoU for class {text_prompt}: {iou:.4f}")
