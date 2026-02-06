@@ -60,7 +60,7 @@ def evaluate(args):
     device = torch.device(args.device)
     model = build_samwise(args)
     model.to(device)
-    model_without_ddp = model.module
+    model_without_ddp = model
 
     checkpoint = torch.load(args.resume, map_location='cpu')
     checkpoint = on_load_checkpoint(model_without_ddp, checkpoint)
