@@ -106,7 +106,7 @@ def evaluate(args):
             all_gt_masks.append(masks_cls)
 
         all_pred_masks = torch.cat(all_pred_masks, dim=0)
-        all_gt_masks = torch.cat(all_gt_masks, dim=0)
+        all_gt_masks = torch.cat(all_gt_masks, dim=0).squeeze()
         print(all_pred_masks.shape)
         print(all_gt_masks.shape)
 
