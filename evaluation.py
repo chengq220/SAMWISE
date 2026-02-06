@@ -66,6 +66,7 @@ def evaluate(args):
     checkpoint = on_load_checkpoint(model_without_ddp, checkpoint)
     missing_keys, unexpected_keys = model_without_ddp.load_state_dict(checkpoint['model'], strict=False)
 
+    metric = BinaryJaccardIndex()
         
     model.eval()
     start_time = time.time()
@@ -86,7 +87,6 @@ def evaluate(args):
         origin_w, origin_h = vd.origin_w, vd.origin_h
         
         for imgs, masks, clip_frames_ids in tqdm(dl):
-            print(masks.shape)
             clip_frames_ids = clip_frames_ids.tolist()
             imgs = imgs.to(args.device)  # [eval_clip_window, 3, h, w]
             img_h, img_w = imgs.shape[-2:]
@@ -102,13 +102,14 @@ def evaluate(args):
             pred_masks = (pred_masks.sigmoid() > args.threshold)[0].cpu() 
             all_pred_masks.append(pred_masks)
 
-            masks_cls = masks[masks == cls]
+            masks_cls = (masks==cls).float()
             all_gt_masks.append(masks_cls)
 
         all_pred_masks = torch.cat(all_pred_masks, dim=0)
         all_gt_masks = torch.cat(all_gt_masks, dim=0)
+        print(all_pred_masks.shape)
+        print(all_gt_masks.shape)
 
-        metric = BinaryJaccardIndex()
         iou = metric(all_pred_masks, all_gt_masks)
         print(f"Evaluation IoU for class {text_prompt}: {iou:.4f}")
     end_time = time.time()
