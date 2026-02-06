@@ -13,10 +13,6 @@ import torch
 import util.misc as utils
 from torch.nn import functional as F
 from models.segmentation import loss_masks
-from torchmetrics.classification import BinaryJaccardIndex
-from torch.utils.data import DataLoader
-# from datasets.transform_utils import VideoEvalDatasetWithMasks
-from tqdm import tqdm 
 
 
 def train_one_epoch(model: torch.nn.Module,
