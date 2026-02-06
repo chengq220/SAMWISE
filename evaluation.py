@@ -99,8 +99,9 @@ def evaluate(args):
             pred_masks = outputs["pred_masks"]  # [t, q, h, w]
             pred_masks = pred_masks.unsqueeze(0)
             pred_masks = F.interpolate(pred_masks, size=(origin_h, origin_w), mode='bilinear', align_corners=False) 
-            print(pred_masks.shape)
             pred_masks = (pred_masks.sigmoid() > args.threshold)[0].cpu() 
+            print(pred_masks.type())
+            print(masks.type())
             all_pred_masks.append(pred_masks)
 
             masks_cls = (masks==cls).float()
