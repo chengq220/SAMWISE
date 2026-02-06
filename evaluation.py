@@ -13,7 +13,7 @@ from util.misc import on_load_checkpoint
 from torch.utils.data import Dataset
 import torchvision.transforms as TF
 import time 
-
+import numpy as np
 from datasets.categories import endovis2017_category_dict
 from tools.metrics import db_eval_iou
 
@@ -106,8 +106,8 @@ def evaluate(args):
         all_gt_masks = torch.cat(all_gt_masks, dim=0).squeeze().numpy()
 
         iou = db_eval_iou(all_gt_masks, all_pred_masks)
-        print(iou.shape)
-        print(f"Evaluation IoU for class {text_prompt}: {iou.item():.4f}")
+        avg_iou = np.mean(iou)
+        print(f"Evaluation IoU for class {text_prompt}: {avg_iou:.4f}")
     end_time = time.time()
     total_time = end_time - start_time
     print(f"Total Evaluation time: {total_time:.2f} s")
