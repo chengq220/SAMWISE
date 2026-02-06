@@ -41,13 +41,7 @@ class EndoVis2017Dataset(Dataset):
             vid_frames = sorted(list(self.videos[vid_key])) # gets the files in video idx and sort them in order
             vid_len = len(vid_frames)
             for frame_id in range(0, vid_len, self.num_frames): # Get each frame
-                cur_frame = vid_frames[frame_id]
-                frame_name = str(cur_frame).split("/")[-1]
-                mask_path = os.path.join(str(self.img_folder), 'label', frame_name)
-                mask = Image.open(mask_path).convert('P')
-                mask = np.array(mask) # Treat 0 as segment all tools while greater 0 represent segement specific tools
-                category = np.unique(mask)
-                category = category[category > 0]
+                category = list(rev_category_dict.keys())
                 for cls in category:
                     meta = {}
                     meta['video'] = vid_key
