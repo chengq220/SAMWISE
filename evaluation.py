@@ -15,8 +15,7 @@ import torchvision.transforms as TF
 import time 
 
 from datasets.categories import endovis2017_category_dict
-from torchmetrics.classification import BinaryJaccardIndex
-from tools.metrics import compute_mask_iou
+from tools.metrics import db_eval_iou
 
 
 class EvalDataset(Dataset):
@@ -65,8 +64,6 @@ def evaluate(args):
     checkpoint = torch.load(args.model, map_location='cpu')
     checkpoint = on_load_checkpoint(model_without_ddp, checkpoint)
     missing_keys, unexpected_keys = model_without_ddp.load_state_dict(checkpoint['model'], strict=False)
-
-    # metric = BinaryJaccardIndex()
         
     model.eval()
     start_time = time.time()
@@ -108,7 +105,7 @@ def evaluate(args):
         all_pred_masks = torch.cat(all_pred_masks, dim=0)
         all_gt_masks = torch.cat(all_gt_masks, dim=0)
 
-        iou, intersection, union = compute_mask_iou(all_pred_masks, all_gt_masks)
+        iou = db_eval_iou(all_gt_masks, all_pred_masks)
         print(iou.shape)
         print(f"Evaluation IoU for class {text_prompt}: {iou.item():.4f}")
     end_time = time.time()

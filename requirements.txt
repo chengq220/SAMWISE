@@ -17,4 +17,3 @@ sacrebleu
 scikit-learn
 gdown
 moviepy
-torchmetrics
