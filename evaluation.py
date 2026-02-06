@@ -16,6 +16,7 @@ import time
 
 from datasets.categories import endovis2017_category_dict
 from torchmetrics.classification import BinaryJaccardIndex
+from tools.metrics import compute_mask_iou
 
 
 class EvalDataset(Dataset):
@@ -46,7 +47,6 @@ class EvalDataset(Dataset):
 
 
 def evaluate(args):
-
     # load data
     if not os.path.isdir(args.file_path):
         raise ValueError(f"Directory does not exist: {args.file_path}")
@@ -66,7 +66,7 @@ def evaluate(args):
     checkpoint = on_load_checkpoint(model_without_ddp, checkpoint)
     missing_keys, unexpected_keys = model_without_ddp.load_state_dict(checkpoint['model'], strict=False)
 
-    metric = BinaryJaccardIndex()
+    # metric = BinaryJaccardIndex()
         
     model.eval()
     start_time = time.time()
@@ -99,6 +99,7 @@ def evaluate(args):
             pred_masks = outputs["pred_masks"]  # [t, q, h, w]
             pred_masks = pred_masks.unsqueeze(0)
             pred_masks = F.interpolate(pred_masks, size=(origin_h, origin_w), mode='bilinear', align_corners=False) 
+            print(pred_masks.shape)
             pred_masks = (pred_masks.sigmoid() > args.threshold)[0].cpu() 
             all_pred_masks.append(pred_masks)
 
@@ -107,10 +108,8 @@ def evaluate(args):
 
         all_pred_masks = torch.cat(all_pred_masks, dim=0)
         all_gt_masks = torch.cat(all_gt_masks, dim=0).squeeze()
-        print(all_pred_masks.shape)
-        print(all_gt_masks.shape)
 
-        iou = metric(all_pred_masks, all_gt_masks)
+        iou, intersection, union = compute_mask_iou(all_pred_masks, all_gt_masks)
         print(f"Evaluation IoU for class {text_prompt}: {iou:.4f}")
     end_time = time.time()
     total_time = end_time - start_time
