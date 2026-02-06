@@ -7,6 +7,12 @@ python main.py \
     --epochs 5 \
     --batch_size 2 
 
+Evaluation Command 
+python evaluate.py \
+    --model output/demo/model.pth \
+    --file_path data/endovis2017/val1 \
+    --batch 2
+
 Inference Command
 python inference.py \
     --input_path data/endovis2017/val1/image \
