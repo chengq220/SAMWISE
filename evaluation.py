@@ -80,7 +80,7 @@ def evaluate(args):
         all_pred_masks = []
         all_gt_masks = []
         vd = EvalDataset(args.file_path)
-        dl = DataLoader(vd, batch_size=args.batch, num_workers=args.num_workers, shuffle=False)
+        dl = DataLoader(vd, batch_size=args.num_frames, num_workers=args.num_workers, shuffle=False)
         origin_w, origin_h = vd.origin_w, vd.origin_h
         
         for imgs, masks, clip_frames_ids in tqdm(dl):
@@ -103,7 +103,7 @@ def evaluate(args):
             all_gt_masks.append(masks_cls)
 
         all_pred_masks = torch.cat(all_pred_masks, dim=0)
-        all_gt_masks = torch.cat(all_gt_masks, dim=0)
+        all_gt_masks = torch.cat(all_gt_masks, dim=0).squeeze()
 
         iou = db_eval_iou(all_gt_masks, all_pred_masks)
         print(iou.shape)
@@ -157,7 +157,7 @@ if __name__ == '__main__':
     parser.add_argument("--model", type = str, default = None, required=True, help="The save file for the trained model")
     parser.add_argument("--file_path", type = str, default = None, required=True, help="The path to the evaluation images")
     parser.add_argument("--save_path", type = str, default = "output/default", help="directory to save the results/logs")
-    parser.add_argument("--batch", type = int, default = 6, help="dataset batch size")
+    parser.add_argument("--num_frames", type = int, default = 6, help="BNumber of frames to use")
     parser.add_argument("--num_workers", type = int, default = 1, help="Number of workers")
 
     args = parser.parse_args()
