@@ -85,7 +85,6 @@ def evaluate(args):
         dl = DataLoader(vd, batch_size=args.batch, num_workers=args.num_workers, shuffle=False)
         origin_w, origin_h = vd.origin_w, vd.origin_h
         
-        # 3. for each clip
         for imgs, masks, clip_frames_ids in tqdm(dl):
             clip_frames_ids = clip_frames_ids.tolist()
             imgs = imgs.to(args.device)  # [eval_clip_window, 3, h, w]
@@ -103,14 +102,11 @@ def evaluate(args):
             all_pred_masks.append(pred_masks)
 
             masks_cls = masks[masks == cls]
+            print(masks_cls)
             all_gt_masks.append(masks_cls)
 
-        # store the video results
         all_pred_masks = torch.cat(all_pred_masks, dim=0)
-        print(all_pred_masks.shape)
-
         all_gt_masks = torch.cat(all_gt_masks, dim=0)
-        print(all_gt_masks.shape)
 
         metric = BinaryJaccardIndex()
         iou = metric(all_pred_masks, all_gt_masks)
