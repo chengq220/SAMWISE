@@ -86,6 +86,7 @@ def evaluate(args):
         origin_w, origin_h = vd.origin_w, vd.origin_h
         
         for imgs, masks, clip_frames_ids in tqdm(dl):
+            print(masks.shape)
             clip_frames_ids = clip_frames_ids.tolist()
             imgs = imgs.to(args.device)  # [eval_clip_window, 3, h, w]
             img_h, img_w = imgs.shape[-2:]
@@ -102,7 +103,6 @@ def evaluate(args):
             all_pred_masks.append(pred_masks)
 
             masks_cls = masks[masks == cls]
-            print(masks_cls)
             all_gt_masks.append(masks_cls)
 
         all_pred_masks = torch.cat(all_pred_masks, dim=0)
