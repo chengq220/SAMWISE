@@ -5,16 +5,22 @@ python main.py \
     --num_frames 8 \
     --max_skip 1 \
     --epochs 5 \
-    --batch_size 2 
+    --batch_size 2  \
+    --HSA \
+    --use_cme_head
 
 Evaluation Command 
 python evaluate.py \
     --model output/demo/model.pth \
     --file_path data/endovis2017/val1 \
-    --num_frames 4
+    --num_frames 4 \ 
+    --HSA \
+    --use_cme_head
 
 Inference Command
 python inference.py \
     --input_path data/endovis2017/val1/image \
     --resume output/endovis2017_all/checkpoint0004.pth \
-    --text_prompts "Surgical Tools"
+    --text_prompts "<Prompt>" \
+    --HSA \
+    --use_cme_head
