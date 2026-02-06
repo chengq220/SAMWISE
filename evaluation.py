@@ -62,7 +62,7 @@ def evaluate(args):
     model.to(device)
     model_without_ddp = model
 
-    checkpoint = torch.load(args.resume, map_location='cpu')
+    checkpoint = torch.load(args.model, map_location='cpu')
     checkpoint = on_load_checkpoint(model_without_ddp, checkpoint)
     missing_keys, unexpected_keys = model_without_ddp.load_state_dict(checkpoint['model'], strict=False)
 
