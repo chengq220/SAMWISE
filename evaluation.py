@@ -19,7 +19,7 @@ from torchmetrics.classification import BinaryJaccardIndex
 
 
 class EvalDataset(Dataset):
-    def __init__(self, vid_folder, max_size=512):
+    def __init__(self, vid_folder):
         super().__init__()
         self.vid_folder = vid_folder
         self.frames = list(Path(os.path.join(vid_folder, "image")).glob('*'))
