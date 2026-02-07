@@ -431,7 +431,7 @@ def build_samwise(args):
     if not os.path.isdir(ROBERTA_WEIGHTS_PATH):
         get_roberta_weights()
     # build text encoder
-    roberta = RobertaModel.from_pretrained(ROBERTA_WEIGHTS_PATH, checkpoint_file='model.pt')
+    roberta = RobertaModel.from_pretrained(ROBERTA_WEIGHTS_PATH, checkpoint_file='model.pt') # need to change text encoder to medical
     text_encoder_embed_dim = roberta.model.encoder.lm_head.dense.out_features
 
     sam2_weights, sam2_config = SAM2_PATHS_CONFIG[args.sam2_version]

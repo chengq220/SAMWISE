@@ -14,8 +14,11 @@ SAM2_PATHS_CONFIG = {
     'large': ('pretrain/sam2_hiera_large.pt', 'sam2_configs/sam2_hiera_l.yaml')
 }
 
-ROBERTA_WEIGHTS_URL = 'https://dl.fbaipublicfiles.com/fairseq/models/roberta.base.tar.gz'
+# ROBERTA_WEIGHTS_URL = 'https://dl.fbaipublicfiles.com/fairseq/models/roberta.base.tar.gz' # General encoder 
+
+ROBERTA_WEIGHTS_URL = 'https://dl.fbaipublicfiles.com/biolm/RoBERTa-base-PM-fairseq.tar.gz' # Medical encoder
 ROBERTA_WEIGHTS_PATH = 'pretrain/roberta.base'
+
 
 
 def get_roberta_weights():
