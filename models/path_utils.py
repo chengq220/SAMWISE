@@ -14,9 +14,9 @@ SAM2_PATHS_CONFIG = {
     'large': ('pretrain/sam2_hiera_large.pt', 'sam2_configs/sam2_hiera_l.yaml')
 }
 
-# ROBERTA_WEIGHTS_URL = 'https://dl.fbaipublicfiles.com/fairseq/models/roberta.base.tar.gz' # General encoder 
+# ROBERTA_WEIGHTS_URL = 'https://dl.fbaipublicfiles.com/fairseq/models/roberta.base.tar.gz' # General text encoder 
 
-ROBERTA_WEIGHTS_URL = 'https://dl.fbaipublicfiles.com/biolm/RoBERTa-base-PM-fairseq.tar.gz' # Medical encoder
+ROBERTA_WEIGHTS_URL = 'https://dl.fbaipublicfiles.com/biolm/RoBERTa-base-PM-fairseq.tar.gz' # Medical text encoder
 ROBERTA_WEIGHTS_PATH = 'pretrain/roberta.base'
 
 
@@ -25,7 +25,7 @@ def get_roberta_weights():
     print(f"Downloading Roberta Base from {ROBERTA_WEIGHTS_URL}..")
     py3_wget.download_file(ROBERTA_WEIGHTS_URL, ROBERTA_WEIGHTS_PATH+'.tar.gz')
     print(f"Extracting Roberta Base weights...")
-    cmd = 'cd pretrain && tar -xzvf roberta.base.tar.gz'
+    cmd = 'cd pretrain && tar -xzvf roberta.base.tar.gz --no-same-owner' 
     ret = os.system(cmd)
     if ret != 0:
         print('Something went wrong untarring Roberta weights, exiting...')
