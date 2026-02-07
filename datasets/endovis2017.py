@@ -22,9 +22,9 @@ class EndoVis2017Dataset(Dataset):
         self._transforms = transforms
         self.num_frames = num_frames
         self.max_skip = max_skip
+        self.available_classes = list(rev_category_dict.keys())
         # create video meta data
         self.prepare_metas()
-        self.available_classes = list(rev_category_dict.keys())
 
         print('\n video num: ', len(self.videos), ' clip num: ', len(self.metas))
         print('\n')

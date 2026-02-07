@@ -1,7 +1,7 @@
 Training Command
 python main.py \
     --dataset endovis2017 \
-    --name_exp endovis2017_all \
+    --name_exp endovis2017_cme \
     --num_frames 8 \
     --max_skip 1 \
     --epochs 5 \
