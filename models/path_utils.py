@@ -18,15 +18,15 @@ SAM2_PATHS_CONFIG = {
 # ROBERTA_WEIGHTS_PATH = 'pretrain/roberta.base'
 
 ROBERTA_WEIGHTS_URL = 'https://dl.fbaipublicfiles.com/biolm/RoBERTa-base-PM-M3-Voc-distill-fairseq.tar.gz' # Medical text encoder
-ROBERTA_WEIGHTS_PATH = 'pretrain/RoBERTa-base-PM/RoBERTa-base-PM-fairseq'
+ROBERTA_WEIGHTS_PATH = 'pretrain/RoBERTa-base-PM'
 
 
 
 def get_roberta_weights():
-    print(f"Downloading Roberta Base from {ROBERTA_WEIGHTS_URL}..")
-    py3_wget.download_file(ROBERTA_WEIGHTS_URL, 'pretrain/RoBERTa-base-PM-M3-Voc-distill-fairseq.tar.gz')
-    print(f"Extracting Roberta weights...")
-    cmd = 'cd pretrain && tar -xzvf pretrain/RoBERTa-base-PM-M3-Voc-distill-fairseq.tar.gz' 
+    print(f"Downloading Roberta Base..")
+    py3_wget.download_file(ROBERTA_WEIGHTS_URL, ROBERTA_WEIGHTS_PATH+'.tar.gz')
+    print(f"Extracting Roberta Base weights...")
+    cmd = 'cd pretrain && tar -xzvf roberta.base.tar.gz'
     ret = os.system(cmd)
     if ret != 0:
         print('Something went wrong untarring Roberta weights, exiting...')
