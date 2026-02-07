@@ -33,7 +33,7 @@ class SAMWISE(nn.Module):
         self.tokenizer = RobertaTokenizerFast.from_pretrained('roberta-base')
         self.sam = sam
         self.conditional_memory_encoder = conditional_memory_encoder
-        if args.motion_prompt:
+        if args.motion_prompt: # switch out the motion prompt to descriptor
             # load nlp dict to identify verbs
             self.nlp_dict = spacy.load('en_core_web_sm')
         self.motion_prompt = args.motion_prompt
@@ -160,7 +160,7 @@ class SAMWISE(nn.Module):
 
         if self.motion_prompt:
             vis_outs, state, txt = self._early_fusion_stage(T, samples, txt, attention_mask)
-            motion_prompts = self.extract_motion_prompts(captions, input_ids)
+            motion_prompts = self.extract_descriptor_prompts(captions, input_ids)
             motion_state = [txt_i[motion_prompts[i].bool()] for i, txt_i in enumerate(txt)]
             motion_state = torch.cat(motion_state).repeat_interleave(T, 0)
         else:
@@ -225,8 +225,11 @@ class SAMWISE(nn.Module):
             "obj_ptr": decoder_out.obj_ptr,
         }
         return memory_dict
-
-    def extract_motion_prompts(self, captions, input_ids):
+    
+    # =======================================================
+    # Need to change this to desciptor prompt and motion prompt
+    # =======================================================
+    def extract_descriptor_prompts(self, captions, input_ids):
         docs = [self.nlp_dict(x) for x in captions]
         motion_map = torch.zeros(size=input_ids.shape).to(input_ids.device)
         encoded_input = self.tokenizer(captions, return_tensors="pt", add_special_tokens=True, return_offsets_mapping=True, padding=True)
@@ -238,7 +241,7 @@ class SAMWISE(nn.Module):
                 if rt != '<s>' and rt != '</s>':
                     for token in doc:
                         if token.idx <= start and (token.idx + len(token.text)) >= end:
-                            if token.pos_ == 'VERB':
+                            if token.pos_ == 'ADJ':
                                 motion_map[caption_index][index] = 1
         return motion_map
     
