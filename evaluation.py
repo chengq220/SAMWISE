@@ -47,7 +47,6 @@ class EvalDataset(Dataset):
 
 def evaluate(args):
     # load data
-    print(args.file_path)
     if not os.path.isdir(args.file_path):
         raise ValueError(f"Directory does not exist: {args.file_path}")
     if not os.path.isfile(args.model):

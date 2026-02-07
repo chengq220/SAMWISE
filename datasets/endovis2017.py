@@ -13,7 +13,7 @@ import numpy as np
 import random
 from collections import defaultdict
 
-from datasets.categories import endovis2017_category_rev_dict as rev_category_dict
+from datasets.categories import endovis2017_category_rev_dict as rev_category_dict, endovis2017_category_descriptor_dict as descriptor
 
 class EndoVis2017Dataset(Dataset):
     def __init__(self, img_folder: Path, transforms,
@@ -24,6 +24,7 @@ class EndoVis2017Dataset(Dataset):
         self.max_skip = max_skip
         # create video meta data
         self.prepare_metas()
+        self.available_classes = list(rev_category_dict.keys())
 
         print('\n video num: ', len(self.videos), ' clip num: ', len(self.metas))
         print('\n')
@@ -41,7 +42,13 @@ class EndoVis2017Dataset(Dataset):
             vid_frames = sorted(list(self.videos[vid_key])) # gets the files in video idx and sort them in order
             vid_len = len(vid_frames)
             for frame_id in range(0, vid_len, self.num_frames): # Get each frame
-                category = list(rev_category_dict.keys())
+                cur_frame = vid_frames[frame_id]
+                frame_name = str(cur_frame).split("/")[-1]
+                mask_path = os.path.join(str(self.img_folder), 'label', frame_name)
+                mask = Image.open(mask_path).convert('P')
+                mask = np.array(mask) 
+                category = np.unique(mask)
+                category = category[category > 0] # positive classes
                 for cls in category:
                     meta = {}
                     meta['video'] = vid_key
@@ -49,7 +56,16 @@ class EndoVis2017Dataset(Dataset):
                     meta['frame_id'] = frame_id
                     meta['caption'] = cls
                     self.metas.append(meta)
-
+                negative = [cls for cls in self.available_classes if cls not in set(category)]
+                neg_cls = random.sample(negative, 1)
+                for cls in neg_cls: # negative classes
+                    meta = {}
+                    meta['video'] = vid_key
+                    meta['frames'] = vid_frames
+                    meta['frame_id'] = frame_id
+                    meta['caption'] = cls
+                    self.metas.append(meta)
+                    
     @staticmethod
     def bounding_box(img):
         rows = np.any(img, axis=1)
@@ -141,7 +157,7 @@ class EndoVis2017Dataset(Dataset):
                 'valid': torch.tensor(valid),            # [T,]
                 'orig_size': torch.as_tensor([int(h), int(w)]),
                 'size': torch.as_tensor([int(h), int(w)]),
-                'caption': rev_category_dict.get(cls, "All Surgicial Tools"),
+                'caption': descriptor.get(cls, "Various surgical instruments with diverse forms"),
             }
 
             # "boxes" normalize to [0, 1] and transform from xyxy to cxcywh in self._transform
