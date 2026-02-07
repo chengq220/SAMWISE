@@ -24,7 +24,7 @@ ROBERTA_WEIGHTS_PATH = 'pretrain/RoBERTa-base-PM/RoBERTa-base-PM-fairseq'
 
 def get_roberta_weights():
     print(f"Downloading Roberta Base from {ROBERTA_WEIGHTS_URL}..")
-    py3_wget.download_file(ROBERTA_WEIGHTS_URL, 'pretrain/')
+    py3_wget.download_file(ROBERTA_WEIGHTS_URL, 'pretrain/roberta.base')
     print(f"Extracting Roberta Base weights...")
     cmd = 'cd pretrain && tar -xzvf pretrain/RoBERTa-base-PM-fairseq.tar --no-same-owner' 
     ret = os.system(cmd)
