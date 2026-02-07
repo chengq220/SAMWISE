@@ -428,7 +428,7 @@ from models.path_utils import ROBERTA_WEIGHTS_PATH, ROBERTA_EXTRACT_PATH, SAM2_P
 from models.path_utils import get_roberta_weights
 
 def build_samwise(args):
-    if not os.path.isdir(ROBERTA_WEIGHTS_PATH):
+    if not os.path.isdir(ROBERTA_EXTRACT_PATH):
         get_roberta_weights()
     # build text encoder
     roberta = RobertaModel.from_pretrained(ROBERTA_EXTRACT_PATH, checkpoint_file='model.pt') # need to change text encoder to medical
