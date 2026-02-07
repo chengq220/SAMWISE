@@ -47,10 +47,10 @@ class EvalDataset(Dataset):
 
 def evaluate(args):
     # load data
-    if not os.path.isdir(args.file_path):
-        raise ValueError(f"Directory does not exist: {args.file_path}")
-    if not os.path.isfile(args.model):
-        raise ValueError(f"Model does not exist: {args.model}")
+    if not os.path.exists(args.file_path):
+         raise FileNotFoundError(f"Dataset directory not found: {args.file_path}")
+    if not os.path.exists(args.model):
+        raise FileNotFoundError(f"Model checkpoint not found: {args.model}")
     
     if not os.path.isdir(args.save_path):
         os.makedirs(args.save_path)

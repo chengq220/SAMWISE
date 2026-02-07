@@ -8,7 +8,6 @@ python main.py \
     --batch_size 2  \
     --HSA \
     --use_cme_head
-    --motion_prompt
 
 Evaluation Command 
 python evaluatation.py \
@@ -17,7 +16,6 @@ python evaluatation.py \
     --num_frames 8 \ 
     --HSA \
     --use_cme_head
-    --motion_prompt
 
 Inference Command
 python inference.py \
@@ -26,4 +24,3 @@ python inference.py \
     --text_prompts "<Prompt>" \
     --HSA \
     --use_cme_head
-    --motion_prompt
