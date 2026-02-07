@@ -22,7 +22,7 @@ ROBERTA_WEIGHTS_PATH = 'pretrain/roberta.base'
 
 
 def get_roberta_weights():
-    print(f"Downloading Roberta Base..")
+    print(f"Downloading Roberta Base from {ROBERTA_WEIGHTS_URL}..")
     py3_wget.download_file(ROBERTA_WEIGHTS_URL, ROBERTA_WEIGHTS_PATH+'.tar.gz')
     print(f"Extracting Roberta Base weights...")
     cmd = 'cd pretrain && tar -xzvf roberta.base.tar.gz'
