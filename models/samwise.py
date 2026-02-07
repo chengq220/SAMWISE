@@ -424,14 +424,14 @@ class SAMWISE(nn.Module):
         return pix_feat_with_mem
 
 
-from models.path_utils import ROBERTA_WEIGHTS_PATH, SAM2_PATHS_CONFIG, SAM2_WEIGHTS_URL
+from models.path_utils import ROBERTA_WEIGHTS_PATH, ROBERTA_EXTRACT_PATH, SAM2_PATHS_CONFIG, SAM2_WEIGHTS_URL
 from models.path_utils import get_roberta_weights
 
 def build_samwise(args):
     if not os.path.isdir(ROBERTA_WEIGHTS_PATH):
         get_roberta_weights()
     # build text encoder
-    roberta = RobertaModel.from_pretrained(ROBERTA_WEIGHTS_PATH, checkpoint_file='model.pt') # need to change text encoder to medical
+    roberta = RobertaModel.from_pretrained(ROBERTA_EXTRACT_PATH, checkpoint_file='model.pt') # need to change text encoder to medical
     text_encoder_embed_dim = roberta.model.encoder.lm_head.dense.out_features
 
     sam2_weights, sam2_config = SAM2_PATHS_CONFIG[args.sam2_version]

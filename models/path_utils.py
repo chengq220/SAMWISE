@@ -19,7 +19,7 @@ SAM2_PATHS_CONFIG = {
 
 ROBERTA_WEIGHTS_URL = 'https://dl.fbaipublicfiles.com/biolm/RoBERTa-base-PM-M3-Voc-distill-fairseq.tar.gz' # Medical text encoder
 ROBERTA_WEIGHTS_PATH = 'pretrain/RoBERTa-base-PM'
-ROBERTA_EXTRACT_PATH = ''
+ROBERTA_EXTRACT_PATH = 'pretrain/RoBERTa-base-PM-M3-Voc-distill/RoBERTa-base-PM-M3-Voc-distill-fairseq/'
 
 
 
