@@ -104,6 +104,8 @@ def compute_masks(model, text_prompt, frames_folder, frames_list, ext):
             outputs = model([imgs], [text_prompt], [target])
 
         pred_masks = outputs["pred_masks"]  # [t, q, h, w]
+        print(pred_masks.max())
+        print(pred_masks.min())
         pred_masks = pred_masks.unsqueeze(0)
         pred_masks = F.interpolate(pred_masks, size=(origin_h, origin_w), mode='bilinear', align_corners=False) 
         pred_masks = (pred_masks.sigmoid() > args.threshold)[0].cpu() 

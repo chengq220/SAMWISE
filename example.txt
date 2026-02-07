@@ -20,7 +20,7 @@ python evaluatation.py \
 Inference Command
 python inference.py \
     --input_path data/endovis2017/val1/image \
-    --resume output/endovis2017_all/checkpoint0004.pth \
-    --text_prompts "<Prompt>" \
+    --resume output/endovis2017_cme/checkpoint0004.pth \
+    --text_prompts "Bipolar Forceps" \
     --HSA \
     --use_cme_head
