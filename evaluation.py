@@ -47,10 +47,11 @@ class EvalDataset(Dataset):
 
 def evaluate(args):
     # load data
+    print(args.file_path)
     if not os.path.isdir(args.file_path):
         raise ValueError(f"Directory does not exist: {args.file_path}")
     if not os.path.isfile(args.model):
-        raise ValueError(f"Directory does not exist: {args.file_path}")
+        raise ValueError(f"Model does not exist: {args.model}")
     
     if not os.path.isdir(args.save_path):
         os.makedirs(args.save_path)
@@ -89,9 +90,10 @@ def evaluate(args):
             img_h, img_w = imgs.shape[-2:]
             size = torch.as_tensor([int(img_h), int(img_w)]).to(args.device)
             target = {"size": size, 'frame_ids': clip_frames_ids}
-
+            
+            prompts = [text_prompt] * args.num_frames
             with torch.no_grad():
-                outputs = model([imgs], [text_prompt], [target])
+                outputs = model([imgs], prompts, [target])
 
             pred_masks = outputs["pred_masks"]  # [t, q, h, w]
             pred_masks = pred_masks.unsqueeze(0)

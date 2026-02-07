@@ -8,7 +8,7 @@ python main.py \
     --batch_size 2 
 
 Evaluation Command 
-python evaluate.py \
+python evaluatation.py \
     --model output/demo/model.pth \
     --file_path data/endovis2017/val1 \
     --num_frames 4
