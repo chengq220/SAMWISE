@@ -26,7 +26,7 @@ def get_roberta_weights():
     print(f"Downloading Roberta Base from {ROBERTA_WEIGHTS_URL}..")
     py3_wget.download_file(ROBERTA_WEIGHTS_URL, 'pretrain/RoBERTa-base-PM-M3-Voc-distill-fairseq.tar.gz')
     print(f"Extracting Roberta weights...")
-    cmd = 'cd pretrain && tar -xzvf pretrain/RoBERTa-base-PM-M3-Voc-distill-fairseq.tar.gz --no-same-owner' 
+    cmd = 'cd pretrain && tar -xzvf pretrain/RoBERTa-base-PM-M3-Voc-distill-fairseq.tar.gz' 
     ret = os.system(cmd)
     if ret != 0:
         print('Something went wrong untarring Roberta weights, exiting...')
