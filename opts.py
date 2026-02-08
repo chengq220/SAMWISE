@@ -26,7 +26,7 @@ def get_args_parser():
 
     # Image Encoder: SAM2
     # Model configuration
-    parser.add_argument('--sam2_version', default='tiny', type=str, choices=['tiny', 'base', 'large'],
+    parser.add_argument('--sam2_version', default='tiny', type=str, choices=['tiny', 'base', 'large','med'],
                         help="Version of SAM2 image encoder to use")
     parser.add_argument('--disable_pred_obj_score', default=False, action='store_true',
                         help="Disable predicted object score")
