@@ -13,6 +13,7 @@ import torch
 import util.misc as utils
 from torch.nn import functional as F
 from models.segmentation import loss_masks
+from PIL import Image
 
 
 def train_one_epoch(model: torch.nn.Module,
@@ -33,9 +34,13 @@ def train_one_epoch(model: torch.nn.Module,
         samples = samples.to(device)
         captions = [t["caption"] for t in targets]
         outputs = model(samples, captions, targets)
-        print(outputs["masks"].shape)
-        # mask_save = outputs["masks"].reshape(mask.shape[0], mask.shape[1]).astype('uint8') # np
-        # mask_save = outputs["masks"] > 0.5
+        # saving mask during training to check what's being learned
+        save_mask = outputs["masks"][0].squeeze().detach().cpu().numpy()
+        save_mask = save_mask.reshape(save_mask.shape[0], save_mask.shape[1]).astype('uint8') # np
+        save_mask = save_mask > 0.5
+        save_mask = Image.fromarray(save_mask)
+        save_mask.save("output/viz_check.png")
+        ## 
         losses = {}
         seg_loss = loss_masks(torch.cat(outputs["masks"]), targets, num_frames=samples.tensors.shape[1])
         losses.update(seg_loss)

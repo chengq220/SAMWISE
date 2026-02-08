@@ -1,4 +1,5 @@
 # Surgical Video Segmentation
+This code was tested on Ubuntu 22.04 with Python 3.10, Pytorch 2.1.0, and Cuda 11.8.0
 
 ## Setup Directory/Install Dependencies
 ```
