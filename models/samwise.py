@@ -155,6 +155,17 @@ class SAMWISE(nn.Module):
     def compute_backbone_output(self, samples, captions):
         samples, BT, orig_size = self.preprocess_visual_features(samples, self.image_size)
         txt, attention_mask, input_ids = self.preprocess_text_features(captions)
+        print("txt values")
+        print(txt.min())
+        print(txt.max())
+        print("==================")
+        print("attention values")
+        print(attention_mask.min())
+        print(attention_mask.max())
+        print("==================")
+        print("attention values")
+        print(input_ids.min())
+        print(input_ids.max())
 
         B, T = BT
 
@@ -425,10 +436,12 @@ class SAMWISE(nn.Module):
 
 
 from models.path_utils import ROBERTA_WEIGHTS_PATH, SAM2_PATHS_CONFIG, SAM2_WEIGHTS_URL
+from models.path_utils import get_roberta_weights
 
 def build_samwise(args):
     if not os.path.isdir(ROBERTA_WEIGHTS_PATH):
-        raise FileNotFoundError(f"Weight directory not found: {ROBERTA_WEIGHTS_PATH}")
+        # raise FileNotFoundError(f"Weight directory not found: {ROBERTA_WEIGHTS_PATH}")
+        get_roberta_weights()
     
     # build text encoder
     roberta = RobertaModel.from_pretrained(ROBERTA_WEIGHTS_PATH, checkpoint_file='model.pt') # need to change text encoder to medical
