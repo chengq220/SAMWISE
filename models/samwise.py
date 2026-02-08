@@ -30,7 +30,8 @@ class SAMWISE(nn.Module):
         super().__init__()
 
         self.text_encoder = text_encoder
-        self.tokenizer = RobertaTokenizerFast.from_pretrained('allenai/biomed_roberta_base')
+        # self.tokenizer = RobertaTokenizerFast.from_pretrained('allenai/biomed_roberta_base')
+        self.tokenizer = RobertaTokenizerFast.from_pretrained('roberta-base')
         self.sam = sam
         self.conditional_memory_encoder = conditional_memory_encoder
         if args.motion_prompt: # switch out the motion prompt to descriptor
