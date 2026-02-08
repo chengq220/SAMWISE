@@ -146,26 +146,15 @@ class SAMWISE(nn.Module):
         input_ids = torch.tensor(batch_encoding_text['input_ids']).cuda()
         attention_mask = torch.tensor(batch_encoding_text['attention_mask']).eq(0).cuda()
         text_encoder = self.text_encoder.model.encoder.sentence_encoder
-        has_pads = (torch.tensor(input_ids.device.type == "xla") or attention_mask.any())
+        # has_pads = (torch.tensor(input_ids.device.type == "xla") or attention_mask.any())
         x, encoder_embedding = text_encoder.forward_embedding(input_ids, None)
-        x = x * (1 - attention_mask.unsqueeze(-1).type_as(x) * has_pads.type_as(x))
+        # x = x * (1 - attention_mask.unsqueeze(-1).type_as(x) * has_pads.type_as(x))
         txt = x.transpose(0, 1)  # B x T x C -> T x B x C
         return txt, attention_mask, input_ids
     
     def compute_backbone_output(self, samples, captions):
         samples, BT, orig_size = self.preprocess_visual_features(samples, self.image_size)
         txt, attention_mask, input_ids = self.preprocess_text_features(captions)
-        print("txt values")
-        print(txt.min())
-        print(txt.max())
-        print("==================")
-        print("attention values")
-        print(attention_mask.min())
-        print(attention_mask.max())
-        print("==================")
-        print("attention values")
-        print(input_ids.min())
-        print(input_ids.max())
         B, T = BT
 
         if self.motion_prompt:
