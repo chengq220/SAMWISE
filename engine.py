@@ -45,10 +45,11 @@ def train_one_epoch(model: torch.nn.Module,
         seg_loss = loss_masks(torch.cat(outputs["masks"]), targets, num_frames=samples.tensors.shape[1])
         losses.update(seg_loss)
         if args.use_cme_head and "pred_cme_logits" in outputs:
-            weight = torch.tensor([1., 2.]).to(device)
+            weight = torch.tensor([1., 1.]).to(device)
             CME_loss = F.cross_entropy(torch.cat(outputs["pred_cme_logits"]), ignore_index=-1,
                                         target=torch.tensor(outputs["cme_label"]).long().to(device),
-                                        weight=weight)
+                                        weight=weight,
+                                        label_smoothing=0.1)
             losses.update({"CME_loss": CME_loss if not CME_loss.isnan() else torch.tensor(0).to(device)})
 
         loss_dict = losses
