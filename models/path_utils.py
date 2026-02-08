@@ -30,7 +30,7 @@ SAM2_PATHS_CONFIG = {
 
 
 ROBERTA_WEIGHTS_URL = 'https://dl.fbaipublicfiles.com/fairseq/models/roberta.base.tar.gz'
-ROBERTA_WEIGHTS_PATH = 'pretrain/roberta.base'
+ROBERTA_WEIGHTS_PATH = 'pretrain/RoBERTa-base-PM/RoBERTa-base-PM-fairseq'
 
 
 def get_roberta_weights():
