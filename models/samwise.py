@@ -147,9 +147,9 @@ class SAMWISE(nn.Module):
         input_ids = torch.tensor(batch_encoding_text['input_ids']).cuda()
         attention_mask = torch.tensor(batch_encoding_text['attention_mask']).eq(0).cuda()
         text_encoder = self.text_encoder.model.encoder.sentence_encoder
-        # has_pads = (torch.tensor(input_ids.device.type == "xla") or attention_mask.any())
+        has_pads = (torch.tensor(input_ids.device.type == "xla") or attention_mask.any())
         x, encoder_embedding = text_encoder.forward_embedding(input_ids, None)
-        # x = x * (1 - attention_mask.unsqueeze(-1).type_as(x) * has_pads.type_as(x))
+        x = x * (1 - attention_mask.unsqueeze(-1).type_as(x) * has_pads.type_as(x))
         txt = x.transpose(0, 1)  # B x T x C -> T x B x C
         return txt, attention_mask, input_ids
     
