@@ -18,7 +18,7 @@ def get_args_parser():
                         help="Weight decay (L2 regularization)")
     parser.add_argument('--epochs', default=6, type=int,
                         help="Number of training epochs")
-    parser.add_argument('--lr_drop', default=[60000], type=int, nargs='+',
+    parser.add_argument('--lr_drop', default=[900], type=int, nargs='+',
                         help="Epochs at which learning rate should drop")
     parser.add_argument('--clip_max_norm', default=1, type=float,
                         help="Max norm for gradient clipping")

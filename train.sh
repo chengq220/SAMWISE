@@ -9,4 +9,6 @@ python main.py \
     --epochs 2 \
     --batch_size 2  \
     --HSA \
-    --use_cme_head
+    --use_cme_head \
+    --clip_max_norm 0.5 \
+    --lr 1e-4
