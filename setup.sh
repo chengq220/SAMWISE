@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# Update system
+apt update
+apt install tmux
+
 #Install requirements
 pip install -r requirements.txt
 

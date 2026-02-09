@@ -39,7 +39,7 @@ def train_one_epoch(model: torch.nn.Module,
         save_mask = save_mask.reshape(save_mask.shape[0], save_mask.shape[1]).astype('uint8') # np
         save_mask = save_mask > 0.5
         save_mask = Image.fromarray(save_mask)
-        save_mask.save("output/viz_check.png")
+        save_mask.save("output/viz_check.png")        
         ## 
         losses = {}
         seg_loss = loss_masks(torch.cat(outputs["masks"]), targets, num_frames=samples.tensors.shape[1])
