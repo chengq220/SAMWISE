@@ -108,9 +108,9 @@ def compute_masks(model, text_prompt, frames_folder, frames_list, ext):
         pred_masks = F.interpolate(pred_masks, size=(origin_h, origin_w), mode='bilinear', align_corners=False) 
         pred_masks = (pred_masks.sigmoid() > args.threshold)[0].cpu() 
         all_pred_masks.append(pred_masks)
-
     # store the video results
     all_pred_masks = torch.cat(all_pred_masks, dim=0).numpy()  # (video_len, h, w)
+    print(f"Raw logits range: [{all_pred_masks.min():.4f}, {all_pred_masks.max():.4f}]")
 
     return all_pred_masks
 

@@ -19,13 +19,14 @@ from tools.metrics import db_eval_iou
 
 
 class EvalDataset(Dataset):
-    def __init__(self, vid_folder):
+    def __init__(self, vid_folder, max_size=1024):
         super().__init__()
         self.vid_folder = vid_folder
-        self.frames = list(Path(os.path.join(vid_folder, "image")).glob('*'))
+        self.frames = sorted(list(Path(os.path.join(vid_folder, "image")).glob('*')))
         self.vid_len = len(self.frames)
         self.origin_w, self.origin_h = Image.open(self.frames[0]).size
         self.img_transform = TF.Compose([
+            TF.Resize(max_size-4, max_size=max_size), #T.Resize(360),
             TF.ToTensor(),
             TF.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
@@ -39,7 +40,7 @@ class EvalDataset(Dataset):
         mask_path = os.path.join(self.vid_folder, "label", os.path.basename(frame))
         mask = Image.open(mask_path).convert('P')
         
-        return self.img_transform(img), np.array(mask), idx
+        return self.img_transform(img), np.array(mask).astype('uint8'), idx
 
 
 def evaluate(args):
