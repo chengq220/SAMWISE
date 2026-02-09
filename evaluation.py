@@ -14,7 +14,7 @@ from torch.utils.data import Dataset
 import torchvision.transforms as TF
 import time 
 import numpy as np
-from datasets.categories import endovis2017_category_dict
+from datasets.categories import endovis2017_category_rev_dict as category_dict
 from tools.metrics import db_eval_iou
 
 
@@ -29,9 +29,6 @@ class EvalDataset(Dataset):
             TF.ToTensor(),
             TF.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
-        self.mask_transform = TF.Compose([
-            TF.ToTensor(),
-        ])
             
     def __len__(self):
         return self.vid_len
@@ -42,7 +39,7 @@ class EvalDataset(Dataset):
         mask_path = os.path.join(self.vid_folder, "label", os.path.basename(frame))
         mask = Image.open(mask_path).convert('P')
         
-        return self.img_transform(img), self.mask_transform(mask), idx
+        return self.img_transform(img), np.array(mask), idx
 
 
 def evaluate(args):
@@ -68,15 +65,10 @@ def evaluate(args):
     model.eval()
     start_time = time.time()
     print(f'Begin Evaluation')
-
     mIou = []
-    text_prompts = list(endovis2017_category_dict.keys())
-    for i in range(len(text_prompts)):
-        text_prompt = text_prompts[i]
 
-        cls = endovis2017_category_dict.get(text_prompt, -1)
-        if(cls == -1):
-            raise ValueError("Class is not recognized")
+    for cls in range(1, 8):
+        text_prompt = category_dict.get(cls, "Other")
 
         all_pred_masks = []
         all_gt_masks = []
@@ -90,11 +82,12 @@ def evaluate(args):
             img_h, img_w = imgs.shape[-2:]
             size = torch.as_tensor([int(img_h), int(img_w)]).to(args.device)
             target = {"size": size, 'frame_ids': clip_frames_ids}
-            
+        
             with torch.no_grad():
                 outputs = model([imgs], [text_prompt], [target])
 
             pred_masks = outputs["pred_masks"]  # [t, q, h, w]
+            pred_masks_logits = pred_masks
             pred_masks = pred_masks.unsqueeze(0)
             pred_masks = F.interpolate(pred_masks, size=(origin_h, origin_w), mode='bilinear', align_corners=False) 
             pred_masks = (pred_masks.sigmoid() > args.threshold)[0].cpu() 
@@ -102,11 +95,12 @@ def evaluate(args):
 
             masks_cls = (masks==cls).bool()
             all_gt_masks.append(masks_cls)
-
+        
         all_pred_masks = torch.cat(all_pred_masks, dim=0).numpy()
         all_gt_masks = torch.cat(all_gt_masks, dim=0).squeeze().numpy()
 
         iou = db_eval_iou(all_gt_masks, all_pred_masks)
+        print(f"Raw logits range: [{pred_masks_logits.min():.4f}, {pred_masks_logits.max():.4f}]")
         avg_iou = np.mean(iou)
         mIou.append(avg_iou)
         print(f"Evaluation IoU for class {text_prompt}: {avg_iou:.4f}")
