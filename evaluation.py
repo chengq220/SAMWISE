@@ -69,6 +69,7 @@ def evaluate(args):
     start_time = time.time()
     print(f'Begin Evaluation')
 
+    mIou = []
     text_prompts = list(endovis2017_category_dict.keys())
     for i in range(len(text_prompts)):
         text_prompt = text_prompts[i]
@@ -90,9 +91,8 @@ def evaluate(args):
             size = torch.as_tensor([int(img_h), int(img_w)]).to(args.device)
             target = {"size": size, 'frame_ids': clip_frames_ids}
             
-            prompts = [text_prompt] * args.num_frames
             with torch.no_grad():
-                outputs = model([imgs], prompts, [target])
+                outputs = model([imgs], [text_prompt], [target])
 
             pred_masks = outputs["pred_masks"]  # [t, q, h, w]
             pred_masks = pred_masks.unsqueeze(0)
@@ -108,7 +108,10 @@ def evaluate(args):
 
         iou = db_eval_iou(all_gt_masks, all_pred_masks)
         avg_iou = np.mean(iou)
+        mIou.append(avg_iou)
         print(f"Evaluation IoU for class {text_prompt}: {avg_iou:.4f}")
+    mIou = np.mean(np.array(mIou))
+    print(f"Evaluation mIoU: {mIou:.4f}")
     end_time = time.time()
     total_time = end_time - start_time
     print(f"Total Evaluation time: {total_time:.2f} s")
@@ -120,7 +123,7 @@ if __name__ == '__main__':
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
     parser = argparse.ArgumentParser()
-    parser.add_argument('--sam2_version', default='tiny', type=str, choices=['tiny', 'base', 'large'],
+    parser.add_argument('--sam2_version', default='tiny', type=str, choices=['tiny', 'base', 'large', 'med'],
                         help="Version of SAM2 image encoder to use")
     parser.add_argument('--disable_pred_obj_score', default=False, action='store_true',
                         help="Disable predicted object score")
