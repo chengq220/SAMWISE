@@ -55,7 +55,7 @@ class EndoVis2017Dataset(Dataset):
                     meta['video'] = vid_key
                     meta['frames'] = vid_frames
                     meta['frame_id'] = frame_id
-                    meta['caption'] = cls
+                    meta['cls'] = (cls, 1)
                     self.metas.append(meta)
                 negative = [cls for cls in self.available_classes if cls not in set(category)]
                 neg_cls = random.sample(negative, 1)
@@ -64,7 +64,7 @@ class EndoVis2017Dataset(Dataset):
                     meta['video'] = vid_key
                     meta['frames'] = vid_frames
                     meta['frame_id'] = frame_id
-                    meta['caption'] = cls
+                    meta['cls'] = (cls, 0)
                     self.metas.append(meta)
                     
     @staticmethod
@@ -83,8 +83,8 @@ class EndoVis2017Dataset(Dataset):
         while not instance_check:
             meta = self.metas[idx]  # dict
 
-            video, frames, frame_id, caption = \
-                        meta['video'], meta['frames'], meta['frame_id'], meta['caption']
+            video, frames, frame_id, cls_tuple = \
+                        meta['video'], meta['frames'], meta['frame_id'], meta['cls']
 
             vid_len = len(frames)
             num_frames = self.num_frames
@@ -128,7 +128,7 @@ class EndoVis2017Dataset(Dataset):
                 # create the target
                 mask = np.array(mask)
                 
-                cls = caption
+                cls, presence = cls_tuple
 
                 mask = (mask==cls).astype(np.float32) 
                 if (mask > 0).any():
@@ -151,6 +151,13 @@ class EndoVis2017Dataset(Dataset):
             boxes[:, 0::2].clamp_(min=0, max=w)
             boxes[:, 1::2].clamp_(min=0, max=h)
             masks = torch.stack(masks, dim=0)
+ 
+            if presence == 0: # negative sample
+                cap = f"no instance of {rev_category_dict.get(cls, 'other')}"
+            else:
+                descriptions = list(descriptor.get(cls, []))
+                cap = f"{rev_category_dict.get(cls, 'other')} with {random.choice(descriptions)}"
+
             target = {
                 'frames_idx': torch.tensor(sample_indx), # [T,]
                 'boxes': boxes,                          # [T, 4], xyxy
@@ -158,7 +165,7 @@ class EndoVis2017Dataset(Dataset):
                 'valid': torch.tensor(valid),            # [T,]
                 'orig_size': torch.as_tensor([int(h), int(w)]),
                 'size': torch.as_tensor([int(h), int(w)]),
-                'caption': descriptor.get(cls, "Various surgical instruments with diverse forms"),
+                'caption': cap,
             }
 
             # "boxes" normalize to [0, 1] and transform from xyxy to cxcywh in self._transform
