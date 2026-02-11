@@ -14,8 +14,9 @@ from torch.utils.data import Dataset
 import torchvision.transforms as TF
 import time 
 import numpy as np
-from datasets.categories import endovis2017_category_rev_dict as category_dict
+from datasets.categories import endovis2017_category_rev_dict as category_dict, endovis2017_category_descriptor_dict
 from tools.metrics import db_eval_iou
+import random 
 
 
 class EvalDataset(Dataset):
@@ -83,9 +84,12 @@ def evaluate(args):
             img_h, img_w = imgs.shape[-2:]
             size = torch.as_tensor([int(img_h), int(img_w)]).to(args.device)
             target = {"size": size, 'frame_ids': clip_frames_ids}
-        
+
+            descriptions = list(endovis2017_category_descriptor_dict.get(cls, []))
+            aug_prompt = f"{text_prompt} with {random.choice(descriptions)}"
+
             with torch.no_grad():
-                outputs = model([imgs], [text_prompt], [target])
+                outputs = model([imgs], [aug_prompt], [target])
 
             pred_masks = outputs["pred_masks"]  # [t, q, h, w]
             pred_masks_logits = pred_masks

@@ -3,30 +3,25 @@ Inference code for SAMWISE, on Ref-Youtube-VOS
 Modified from DETR (https://github.com/facebookresearch/detr)
 '''
 
-import pandas as pd
 import argparse
 import random
 import time
-from pathlib import Path
 import numpy as np
 import torch
-import util.misc as utils
 import os
 from PIL import Image
 import torch.nn.functional as F
-import json
 from tqdm import tqdm
 import sys
-from pycocotools import mask as cocomask
 from tools.colormap import colormap
 import opts
 from models.samwise import build_samwise
 from util.misc import on_load_checkpoint
-from tools.metrics import db_eval_boundary, db_eval_iou
 from datasets.transform_utils import VideoEvalDataset
 from torch.utils.data import DataLoader
 from os.path import join
 from datasets.transform_utils import vis_add_mask
+from datasets.categories import endovis2017_category_dict, endovis2017_category_descriptor_dict
 
 
 # colormap
@@ -100,8 +95,11 @@ def compute_masks(model, text_prompt, frames_folder, frames_list, ext):
         size = torch.as_tensor([int(img_h), int(img_w)]).to(args.device)
         target = {"size": size, 'frame_ids': clip_frames_ids}
 
+        cls = endovis2017_category_dict(text_prompt, 7)
+        descriptions = list(endovis2017_category_descriptor_dict.get(cls, []))
+        aug_prompt = f"{text_prompt} with {random.choice(descriptions)}"
         with torch.no_grad():
-            outputs = model([imgs], [text_prompt], [target])
+            outputs = model([imgs], [aug_prompt], [target])
 
         pred_masks = outputs["pred_masks"]  # [t, q, h, w]
         pred_masks = pred_masks.unsqueeze(0)
