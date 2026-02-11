@@ -135,9 +135,6 @@ class EndoVis2017Dataset(Dataset):
 
             # transform
             w, h = img.size
-            boxes = torch.stack(boxes, dim=0)
-            boxes[:, 0::2].clamp_(min=0, max=w)
-            boxes[:, 1::2].clamp_(min=0, max=h)
             masks = torch.stack(masks, dim=0)
  
             if presence == 0: # negative sample
@@ -155,7 +152,6 @@ class EndoVis2017Dataset(Dataset):
                 'caption': cap,
             }
 
-            # "boxes" normalize to [0, 1] and transform from xyxy to cxcywh in self._transform
             imgs, target = self._transforms(imgs, target)
             imgs = torch.stack(imgs, dim=0) # [T, 3, H, W]
 
