@@ -18,7 +18,6 @@ from datasets.categories import endovis2017_category_rev_dict as category_dict, 
 from tools.metrics import db_eval_iou
 import random 
 
-
 class EvalDataset(Dataset):
     def __init__(self, vid_folder, max_size=1024):
         super().__init__()
@@ -42,7 +41,6 @@ class EvalDataset(Dataset):
         mask = Image.open(mask_path).convert('P')
         
         return self.img_transform(img), np.array(mask).astype('uint8'), idx
-
 
 def evaluate(args):
     # load data

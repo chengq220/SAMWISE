@@ -95,7 +95,7 @@ def compute_masks(model, text_prompt, frames_folder, frames_list, ext):
         size = torch.as_tensor([int(img_h), int(img_w)]).to(args.device)
         target = {"size": size, 'frame_ids': clip_frames_ids}
 
-        cls = endovis2017_category_dict(text_prompt, 7)
+        cls = endovis2017_category_dict.get(text_prompt, 7)
         descriptions = list(endovis2017_category_descriptor_dict.get(cls, []))
         aug_prompt = f"{text_prompt} with {random.choice(descriptions)}"
         with torch.no_grad():

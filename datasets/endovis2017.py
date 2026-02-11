@@ -154,7 +154,7 @@ class EndoVis2017Dataset(Dataset):
  
             if presence == 0: # negative sample
                 cap = f"no instance of {rev_category_dict.get(cls, 'other')}"
-            else:
+            else: # Positive 
                 descriptions = list(descriptor.get(cls, []))
                 cap = f"{rev_category_dict.get(cls, 'other')} with {random.choice(descriptions)}"
 

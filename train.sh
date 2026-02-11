@@ -6,8 +6,7 @@ python main.py \
     --name_exp endovis2017_med \
     --num_frames 8 \
     --max_skip 1 \
-    --epochs 2 \
+    --epochs 5 \
     --batch_size 2  \
     --HSA \
-    --clip_max_norm 0.5 \
-    --lr 1e-4
+    --lr 1e-5
