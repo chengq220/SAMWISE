@@ -6,4 +6,5 @@ python inference.py \
     --resume output/endovis2017_med/checkpoint0004.pth \
     --text_prompts "Bipolar Forceps" \
     --threshold 0.8 \
-    --HSA 
+    --HSA \
+    --multi_class
