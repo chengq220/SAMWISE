@@ -66,14 +66,6 @@ class EndoVis2017Dataset(Dataset):
                     meta['frame_id'] = frame_id
                     meta['cls'] = (cls, 0)
                     self.metas.append(meta)
-                    
-    @staticmethod
-    def bounding_box(img):
-        rows = np.any(img, axis=1)
-        cols = np.any(img, axis=0)
-        rmin, rmax = np.where(rows)[0][[0, -1]]
-        cmin, cmax = np.where(cols)[0][[0, -1]]
-        return rmin, rmax, cmin, cmax # y1, y2, x1, x2
 
     def __len__(self):
         return len(self.metas)
@@ -116,7 +108,7 @@ class EndoVis2017Dataset(Dataset):
             sample_indx.sort()
 
             # read frames and masks
-            imgs, boxes, masks, valid = [], [], [], []
+            imgs, masks, valid = [], [], []
             for j in range(self.num_frames):
                 frame_indx = sample_indx[j]
                 frame_path = frames[frame_indx]
@@ -132,18 +124,14 @@ class EndoVis2017Dataset(Dataset):
 
                 mask = (mask==cls).astype(np.float32) 
                 if (mask > 0).any():
-                    y1, y2, x1, x2 = self.bounding_box(mask)
-                    box = torch.tensor([x1, y1, x2, y2]).to(torch.float)
                     valid.append(1)
-                else: # some frame didn't contain the instance
-                    box = torch.tensor([0, 0, 0, 0]).to(torch.float)
+                else:
                     valid.append(0)
                 mask = torch.from_numpy(mask)
 
                 # append
                 imgs.append(img)
                 masks.append(mask)
-                boxes.append(box)
 
             # transform
             w, h = img.size
@@ -160,7 +148,6 @@ class EndoVis2017Dataset(Dataset):
 
             target = {
                 'frames_idx': torch.tensor(sample_indx), # [T,]
-                'boxes': boxes,                          # [T, 4], xyxy
                 'masks': masks,                          # [T, H, W]
                 'valid': torch.tensor(valid),            # [T,]
                 'orig_size': torch.as_tensor([int(h), int(w)]),
@@ -185,7 +172,6 @@ def make_transforms():
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
 
-    # we need augumentation for training or do we
     return normalize
 
 def build(image_set, args):

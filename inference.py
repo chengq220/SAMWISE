@@ -20,8 +20,9 @@ from util.misc import on_load_checkpoint
 from datasets.transform_utils import VideoEvalDataset
 from torch.utils.data import DataLoader
 from os.path import join
-from datasets.transform_utils import vis_add_mask
+from datasets.transform_utils import vis_add_mask, vis_add_mask_multiclass
 from datasets.categories import endovis2017_category_dict, endovis2017_category_descriptor_dict
+from multi_class import multiclass_segmentation
 
 
 # colormap
@@ -82,7 +83,7 @@ def extract_frames_from_mp4(video_path):
     return extract_folder, frames_list, '.png'
 
 
-def compute_masks(model, text_prompt, frames_folder, frames_list, ext):
+def compute_masks(model, text_prompt, frames_folder, frames_list, ext, multi=False):
     all_pred_masks = []
     vd = VideoEvalDataset(frames_folder, frames_list, ext=ext)
     dl = DataLoader(vd, batch_size=args.eval_clip_window, num_workers=args.num_workers, shuffle=False)
@@ -98,14 +99,18 @@ def compute_masks(model, text_prompt, frames_folder, frames_list, ext):
         cls = endovis2017_category_dict.get(text_prompt, 7)
         descriptions = list(endovis2017_category_descriptor_dict.get(cls, []))
         aug_prompt = f"{text_prompt} with {random.choice(descriptions)}"
-        with torch.no_grad():
-            outputs = model([imgs], [aug_prompt], [target])
-
-        pred_masks = outputs["pred_masks"]  # [t, q, h, w]
-        pred_masks = pred_masks.unsqueeze(0)
-        pred_masks = F.interpolate(pred_masks, size=(origin_h, origin_w), mode='bilinear', align_corners=False) 
-        pred_masks = (pred_masks.sigmoid() > args.threshold)[0].cpu() 
-        all_pred_masks.append(pred_masks)
+        if not multi:
+            with torch.no_grad():
+                outputs = model([imgs], [aug_prompt], [target])
+            pred_masks = outputs["pred_masks"]  # [t, h, w]
+            pred_masks = pred_masks.unsqueeze(0)
+            pred_masks = F.interpolate(pred_masks, size=(origin_h, origin_w), mode='bilinear', align_corners=False) 
+            pred_masks = (pred_masks.sigmoid() > args.threshold)[0].cpu() 
+            all_pred_masks.append(pred_masks)
+        else:
+            outputs = multiclass_segmentation(model, imgs, target).long()
+            all_pred_masks.append(outputs.cpu())
+            
     # store the video results
     all_pred_masks = torch.cat(all_pred_masks, dim=0).numpy()  # (video_len, h, w)
     print(f"Raw logits range: [{all_pred_masks.min():.4f}, {all_pred_masks.max():.4f}]")
@@ -133,7 +138,7 @@ def inference(args, model, save_path_prefix, in_path, text_prompts):
     for i in range(len(text_prompts)):
         text_prompt = text_prompts[i]
 
-        all_pred_masks = compute_masks(model, text_prompt, frames_folder, frames_list, ext)
+        all_pred_masks = compute_masks(model, text_prompt, frames_folder, frames_list, ext, args.multi_class)
             
         save_visualize_path_dir = join(save_path_prefix, text_prompt.replace(' ', '_'))
         os.makedirs(save_visualize_path_dir, exist_ok=True)
@@ -145,7 +150,10 @@ def inference(args, model, save_path_prefix, in_path, text_prompts):
             source_img = Image.open(img_path).convert('RGBA') # PIL image
 
             # draw mask
-            source_img = vis_add_mask(source_img, all_pred_masks[t], color_list[i%len(color_list)])
+            if not args.multi_class:
+                source_img = vis_add_mask(source_img, all_pred_masks[t], color_list[i%len(color_list)])
+            else:
+                source_img = vis_add_mask_multiclass(source_img, all_pred_masks[t])
             # save
             save_visualize_path = join(save_visualize_path_dir, frame + '.png')
             source_img.save(save_visualize_path)
@@ -197,6 +205,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('SAMWISE evaluation script', parents=[opts.get_args_parser()])
     parser.add_argument('--input_path', default=None, type=str, required=True, help='path to mp4 video or frames folder')
     parser.add_argument('--text_prompts', default=[''], type=str, required=True, nargs='+', help="List of referring expressions, separated by whitespace")
+    parser.add_argument('--multi_class', action='store_true', help="Enable multi-class segmentation (default: single-class)")
 
     args = parser.parse_args()
     check_args(args)

@@ -25,6 +25,21 @@ def vis_add_mask(img, mask, color):
     origin_img = Image.fromarray(origin_img)
     return origin_img
 
+def vis_add_mask_multiclass(img, mask):
+    origin_img = np.asarray(img.convert('RGB')).copy()
+    cls = np.unique(mask)
+    for i in cls:
+        if i == 0:
+            continue
+        color_tuple = color_list[i % len(color_list)]
+        color = np.array(color_tuple, dtype=np.float32)
+        cls_mask = (mask == i)
+        if not cls_mask.any():
+            continue
+        origin_img[cls_mask] = origin_img[cls_mask] * 0.25 + color * 0.75
+    origin_img = Image.fromarray(origin_img)
+    return origin_img
+
 
 def denormalize(tens):
     mean = torch.tensor([0.485, 0.456, 0.406]).reshape(3, 1, 1)
@@ -136,7 +151,7 @@ class FrameSampler:
 
 
 class VideoEvalDataset(Dataset):
-    def __init__(self, vid_folder, frames, ext='.jpg', max_size=1024):
+    def __init__(self, vid_folder, frames, ext='.jpg', max_size=512):
         super().__init__()
         self.vid_folder = vid_folder
         self.frames = frames
@@ -144,7 +159,6 @@ class VideoEvalDataset(Dataset):
         self.ext = ext
         self.origin_w, self.origin_h = Image.open(join(vid_folder, frames[0]+ext)).size
         self.transform = TF.Compose([
-            TF.Resize(max_size-4, max_size=max_size), #T.Resize(360),
             TF.ToTensor(),
             TF.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
