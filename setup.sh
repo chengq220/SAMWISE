@@ -23,4 +23,4 @@ tar -xzvf RoBERTa-base-PM-fairseq.tar.gz --no-same-owner
 rm RoBERTa-base-PM-fairseq.tar.gz
 
 # wget "https://huggingface.co/jiayuanz3/MedSAM2_pretrain/resolve/main/MedSAM2_pretrain.pth"
-wget "https://huggingface.co/wanglab/MedSAM2/resolve/main/MedSAM2_latest.pth"
+wget "https://huggingface.co/wanglab/MedSAM2/resolve/main/MedSAM2_latest.pt"
