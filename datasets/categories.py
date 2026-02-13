@@ -6,7 +6,7 @@ endovis2017_category_dict = {
 	"Vessel Sealer": 4,
 	"Grasping Retractor": 5,
     "Monopolar Curved Scissors": 6,
-    "Other": 7
+    "Ultrasound Probe": 7
 }
 
 endovis2017_category_rev_dict = {
@@ -16,7 +16,7 @@ endovis2017_category_rev_dict = {
 	4: "Vessel Sealer",
 	5: "Grasping Retractor",
     6: "Monopolar Curved Scissors",
-    7: "Other"
+    7: "Ultrasound Probe"
 }
 
 endovis2017_category_descriptor_dict = {
@@ -58,7 +58,9 @@ endovis2017_category_descriptor_dict = {
         "classic Metzenbaum scissors shape with gentle curve"
     },
     7: {
-        "miscellaneous surgical instruments and background objects",
-        "suction/irrigation devices, clip appliers, staplers"
+        "Compact, sterilizable housing with smooth low-friction coating for trocar passage",
+        "Miniature transducer array at distal tip (8-15 mm footprint) with forward-viewing beam geometry",
+        "Integrated locking collar mechanism for secure tool mounting and depth markers along shaft",
+        "Detachable autoclave-compatible cable system and color-coded orientation markers",
     }
 }
