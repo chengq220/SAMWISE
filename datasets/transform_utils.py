@@ -151,7 +151,7 @@ class FrameSampler:
 
 
 class VideoEvalDataset(Dataset):
-    def __init__(self, vid_folder, frames, ext='.jpg', max_size=512):
+    def __init__(self, vid_folder, frames, ext='.jpg', max_size=1024):
         super().__init__()
         self.vid_folder = vid_folder
         self.frames = frames
@@ -159,6 +159,7 @@ class VideoEvalDataset(Dataset):
         self.ext = ext
         self.origin_w, self.origin_h = Image.open(join(vid_folder, frames[0]+ext)).size
         self.transform = TF.Compose([
+            TF.Resize(max_size-4, max_size=max_size), #T.Resize(360),
             TF.ToTensor(),
             TF.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
