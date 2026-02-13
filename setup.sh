@@ -10,7 +10,8 @@ pip install -r requirements.txt
 #Download data
 mkdir data
 cd data
-gdown --fuzzy "https://drive.google.com/file/d/1XG_lqhQZHBBHb1WM9s9TTu9Gbd4JbND7/view?usp=drive_link"
+# gdown --fuzzy "https://drive.google.com/file/d/1XG_lqhQZHBBHb1WM9s9TTu9Gbd4JbND7/view?usp=drive_link"
+gdown --fuzzy "https://drive.google.com/file/d/1JnWoHF72L7JRV_TCDUSJLlXK4SMqNgK7/view?usp=drive_link"
 tar -xvf endovis2017.tar
 rm endovis2017.tar
 cd ..
@@ -22,5 +23,5 @@ wget "https://dl.fbaipublicfiles.com/biolm/RoBERTa-base-PM-fairseq.tar.gz"
 tar -xzvf RoBERTa-base-PM-fairseq.tar.gz --no-same-owner
 rm RoBERTa-base-PM-fairseq.tar.gz
 
-# wget "https://huggingface.co/jiayuanz3/MedSAM2_pretrain/resolve/main/MedSAM2_pretrain.pth"
-wget "https://huggingface.co/wanglab/MedSAM2/resolve/main/MedSAM2_latest.pt"
+# wget "https://huggingface.co/wanglab/MedSAM2/resolve/main/MedSAM2_latest.pt"
+gdown --fuzzy "drive.google.com/file/d/1DyrrLKst1ZQwkgKM7BWCCwLxSXAgOcMI/view"
