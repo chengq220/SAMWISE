@@ -55,7 +55,7 @@ class EndoVis2017Dataset(Dataset):
                 for inst in self.annoation_dict[id]: 
                     meta = {}
                     meta['video'] = vid_key
-                    meta['frames'] = frame_name
+                    meta['frames'] = vid_frames
                     meta['frame_id'] = frame_id
                     meta['bbox'] = inst['bbox']
                     meta['category'] = inst['category_id']
@@ -105,9 +105,8 @@ class EndoVis2017Dataset(Dataset):
             imgs, masks, valid = [], [], []
             for j in range(self.num_frames):
                 frame_indx = sample_indx[j]
-                frame_path = frames[frame_indx]
-                frame_name = str(frame_path).split('/')[-1]
-                img_path = os.path.join(str(self.img_folder), 'image', frame_name)
+                cc_id, frame_name = frames[frame_indx]
+                img_path = os.path.join(str(self.img_folder), 'images', frame_name)
                 mask_path = os.path.join(str(self.img_folder), 'annotations', 'images', frame_name)
                 img = Image.open(img_path).convert('RGB')
                 mask = Image.open(mask_path).convert('P')
@@ -164,8 +163,8 @@ def build(image_set, args):
     root = Path(args.endovis2017)
     assert root.exists(), f'provided path {root} does not exist'
     PATHS = {
-        "train": (root / "train"),
-        "val": (root / args.split),
+        "train": (root),
+        "val": (root),
     }
     img_folder = PATHS[image_set]
     dataset = EndoVis2017Dataset(img_folder, os.path.join(img_folder, "annotations/Fold0/train.json"), transforms=make_transforms(),

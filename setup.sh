@@ -23,5 +23,4 @@ wget "https://dl.fbaipublicfiles.com/biolm/RoBERTa-base-PM-fairseq.tar.gz"
 tar -xzvf RoBERTa-base-PM-fairseq.tar.gz --no-same-owner
 rm RoBERTa-base-PM-fairseq.tar.gz
 
-# wget "https://huggingface.co/wanglab/MedSAM2/resolve/main/MedSAM2_latest.pt"
-gdown --fuzzy "https://drive.google.com/file/d/1DyrrLKst1ZQwkgKM7BWCCwLxSXAgOcMI/view?usp=sharing"
+wget "https://huggingface.co/wanglab/MedSAM2/resolve/main/MedSAM2_latest.pt"
