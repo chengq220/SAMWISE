@@ -2,10 +2,10 @@
 Endovis2017 data loader
 """
 from pathlib import Path
-
 import torch
 from torch.utils.data import Dataset
 import datasets.transforms_video as T
+import torchvision.transforms as TF
 import os
 from PIL import Image
 import json
@@ -17,11 +17,12 @@ from datasets.categories import endovis2017_category_rev_dict as rev_category_di
     endovis2017_category_descriptor_dict as descriptor
 
 class EndoVis2017Dataset(Dataset):
-    def __init__(self, img_folder: Path, ann_file: Path, transforms,
+    def __init__(self, img_folder: Path, ann_file: Path,
                 num_frames: int, max_skip: int):
         self.img_folder = img_folder
         self.ann_file = ann_file
-        self._transforms = transforms
+        self._img_transforms = make_transforms()
+        self._mask_transforms = make_transforms(isMask=True)
         self.num_frames = num_frames
         self.max_skip = max_skip
         self.available_classes = list(rev_category_dict.keys())
@@ -32,34 +33,38 @@ class EndoVis2017Dataset(Dataset):
         print('\n')
 
     def prepare_metas(self):
-        self.videos = defaultdict(list)
-        with open(str(self.ann_file), 'r') as f:
-            coco_data = json.load(f)
-        self.coco_img = [img['file_name'] for img in coco_data['images']]
-        coco_id = [img['id'] for img in coco_data['images']]
-        for img, cc_id in zip(self.coco_img, coco_id):
-            vid_id = str(img).split('_')[0][-1]
-            vid = (cc_id, img)
-            self.videos[vid_id].append(vid)
-        self.annoation_dict = defaultdict(list)
-        annotations = [ann for ann in coco_data['annotations']]
-        for ann in annotations:
-            img_id = ann['image_id']
-            self.annoation_dict[img_id].append(ann)
-        self.metas = []
-        for vid_key in self.videos.keys():
-            vid_frames = sorted(list(self.videos[vid_key]), key=lambda x: x[1] )
-            vid_len = len(vid_frames)
-            for frame_id in range(0, vid_len, self.num_frames):
-                id, frame_name = vid_frames[frame_id]
-                for inst in self.annoation_dict[id]: 
-                    meta = {}
-                    meta['video'] = vid_key
-                    meta['frames'] = vid_frames
-                    meta['frame_id'] = frame_id
-                    meta['bbox'] = inst['bbox']
-                    meta['category'] = inst['category_id']
-                    self.metas.append(meta)
+        folds = list(Path(self.ann_file).glob("*"))
+        folds.remove("images")
+        for fold in folds:
+            curr_ann_path = os.path.join(self.ann_file, fold, "train.json")
+            self.videos = defaultdict(list)
+            with open(str(curr_ann_path), 'r') as f:
+                coco_data = json.load(f)
+            self.coco_img = [img['file_name'] for img in coco_data['images']]
+            coco_id = [img['id'] for img in coco_data['images']]
+            for img, cc_id in zip(self.coco_img, coco_id):
+                vid_id = str(img).split('_')[0][-1]
+                vid = (cc_id, img)
+                self.videos[vid_id].append(vid)
+            self.annoation_dict = defaultdict(list)
+            annotations = [ann for ann in coco_data['annotations']]
+            for ann in annotations:
+                img_id = ann['image_id']
+                self.annoation_dict[img_id].append(ann)
+            self.metas = []
+            for vid_key in self.videos.keys():
+                vid_frames = sorted(list(self.videos[vid_key]), key=lambda x: x[1] )
+                vid_len = len(vid_frames)
+                for frame_id in range(0, vid_len, self.num_frames):
+                    id, frame_name = vid_frames[frame_id]
+                    for inst in self.annoation_dict[id]: 
+                        meta = {}
+                        meta['video'] = vid_key
+                        meta['frames'] = vid_frames
+                        meta['frame_id'] = frame_id
+                        meta['bbox'] = inst['bbox']
+                        meta['category'] = inst['category_id']
+                        self.metas.append(meta)
 
     def __len__(self):
         return len(self.metas)
@@ -106,20 +111,23 @@ class EndoVis2017Dataset(Dataset):
             for j in range(self.num_frames):
                 frame_indx = sample_indx[j]
                 cc_id, frame_name = frames[frame_indx]
+
                 img_path = os.path.join(str(self.img_folder), 'images', frame_name)
                 mask_path = os.path.join(str(self.img_folder), 'annotations', 'images', frame_name)
+
                 img = Image.open(img_path).convert('RGB')
+                img = self._img_transforms(img)
+
                 mask = Image.open(mask_path).convert('P')
+                mask = self._mask_transforms(mask)
 
                 # create the target
-                mask = np.array(mask)
-                mask = (mask==cls).astype(np.float64) 
+                mask = (mask==cls).float()
                 
                 if (mask > 0).any():
                     valid.append(1)
                 else:
                     valid.append(0)
-                mask = torch.from_numpy(mask)
 
                 # append
                 imgs.append(img)
@@ -127,6 +135,7 @@ class EndoVis2017Dataset(Dataset):
 
             # transform
             w, h = img.size
+            imgs = torch.stack(imgs, dim=0) # [T, 3, H, W]s
             masks = torch.stack(masks, dim=0)
  
             descriptions = list(descriptor.get(cls, []))
@@ -141,9 +150,6 @@ class EndoVis2017Dataset(Dataset):
                 'caption': cap,
             }
 
-            imgs, target = self._transforms(imgs, target)
-            imgs = torch.stack(imgs, dim=0) # [T, 3, H, W]
-
             if torch.any(target['valid'] == 1):  # at leatst one instance
                 instance_check = True
             else:
@@ -151,13 +157,18 @@ class EndoVis2017Dataset(Dataset):
 
         return imgs, target
 
-def make_transforms():
-    normalize = T.Compose([
-        T.ToTensor(),
-        T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+def make_transforms(isMask = False, max_size= 1024):
+    if isMask:
+        return TF.Compose([
+            TF.CenterCrop(max_size),
+            TF.ToTensor()
+        ])
+    
+    return TF.Compose([
+        TF.CenterCrop(max_size),
+        TF.ToTensor(),
+        TF.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
-
-    return normalize
 
 def build(image_set, args):
     root = Path(args.endovis2017)
@@ -167,7 +178,7 @@ def build(image_set, args):
         "val": (root),
     }
     img_folder = PATHS[image_set]
-    dataset = EndoVis2017Dataset(img_folder, os.path.join(img_folder, "annotations/Fold0/train.json"), transforms=make_transforms(),
+    dataset = EndoVis2017Dataset(img_folder, os.path.join(img_folder, "annotations"),
                                 num_frames=args.num_frames, max_skip=args.max_skip)
     
     return dataset
