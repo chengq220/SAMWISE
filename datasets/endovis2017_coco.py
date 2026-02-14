@@ -107,32 +107,27 @@ class EndoVis2017Dataset(Dataset):
             for j in range(self.num_frames):
                 frame_indx = sample_indx[j]
                 cc_id, frame_name = frames[frame_indx]
-
                 img_path = os.path.join(str(self.img_folder), 'images', frame_name)
                 mask_path = os.path.join(str(self.img_folder), 'annotations', 'images', frame_name)
-
                 img = Image.open(img_path).convert('RGB')
-                img = self._img_transforms(img)
-
                 mask = Image.open(mask_path).convert('P')
-                mask = self._mask_transforms(mask)
 
                 # create the target
-                mask = (mask==cls).float()
+                mask = np.array(mask)
+                mask = (mask==cls).astype(np.float64) 
                 
                 if (mask > 0).any():
                     valid.append(1)
                 else:
                     valid.append(0)
+                mask = torch.from_numpy(mask)
 
                 # append
                 imgs.append(img)
                 masks.append(mask)
 
             # transform
-
-            imgs = torch.stack(imgs, dim=0) # [T, 3, H, W]s
-            t, c, w, h = imgs.shape
+            w, h = img.size
             masks = torch.stack(masks, dim=0)
  
             descriptions = list(descriptor.get(cls, []))
@@ -147,6 +142,9 @@ class EndoVis2017Dataset(Dataset):
                 'caption': cap,
             }
 
+            imgs, target = self._transforms(imgs, target)
+            imgs = torch.stack(imgs, dim=0) # [T, 3, H, W]
+
             if torch.any(target['valid'] == 1):  # at leatst one instance
                 instance_check = True
             else:
@@ -154,17 +152,11 @@ class EndoVis2017Dataset(Dataset):
 
         return imgs, target
 
-def make_transforms(isMask = False, max_size= 1024):
-    if isMask:
-        return TF.Compose([
-            TF.CenterCrop(max_size),
-            TF.ToTensor()
-        ])
-    
-    return TF.Compose([
-        TF.CenterCrop(max_size),
-        TF.ToTensor(),
-        TF.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+def make_transforms(max_size= 1024):
+    return T.Compose([
+        T.CenterCrop(max_size),
+        T.ToTensor(),
+        T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
 
 def build(image_set, args):
@@ -175,7 +167,7 @@ def build(image_set, args):
         "val": (root),
     }
     img_folder = PATHS[image_set]
-    dataset = EndoVis2017Dataset(img_folder, os.path.join(img_folder, "annotations/Fold0/train.json"),
+    dataset = EndoVis2017Dataset(img_folder, os.path.join(img_folder, "annotations/Fold0/train.json"),transforms=make_transforms(),
                                 num_frames=args.num_frames, max_skip=args.max_skip)
     
     return dataset
