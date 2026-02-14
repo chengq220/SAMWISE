@@ -92,6 +92,7 @@ def compute_masks(model, text_prompt, frames_folder, frames_list, ext, multi=Fal
     for imgs, clip_frames_ids in tqdm(dl):
         clip_frames_ids = clip_frames_ids.tolist()
         imgs = imgs.to(args.device)  # [eval_clip_window, 3, h, w]
+        img_h, img_w = imgs.shape[-2:]
         size = torch.as_tensor([int(img_h), int(img_w)]).to(args.device)
         target = {"size": size, 'frame_ids': clip_frames_ids}
 
@@ -103,10 +104,11 @@ def compute_masks(model, text_prompt, frames_folder, frames_list, ext, multi=Fal
                 outputs = model([imgs], [aug_prompt], [target])
             pred_masks = outputs["pred_masks"]  # [t, h, w]
             pred_masks = pred_masks.unsqueeze(0)
+            pred_masks = F.interpolate(pred_masks, size=(origin_h, origin_w), mode='bilinear', align_corners=False) 
             pred_masks = (pred_masks.sigmoid() > args.threshold)[0].cpu() 
             all_pred_masks.append(pred_masks)
         else:
-            outputs = multiclass_segmentation(model, imgs, target).long()
+            outputs = multiclass_segmentation(model, imgs, target, size = (origin_h, origin_w)).long()
             all_pred_masks.append(outputs.cpu())
             
     # store the video results

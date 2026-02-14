@@ -6,6 +6,7 @@ python inference.py \
     --resume output/endovis2017_med/checkpoint0004.pth \
     --num_frames 8 \
     --text_prompts "Bipolar Forceps" \
-    --threshold 0.8 \
+    --threshold 0.6 \
     --HSA \
+    --use_cme_head \
     --multi_class

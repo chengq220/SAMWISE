@@ -9,4 +9,5 @@ python main.py \
     --epochs 5 \
     --batch_size 2  \
     --HSA \
+    --use_cme_head \
     --lr 1e-5
