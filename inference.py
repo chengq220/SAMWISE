@@ -104,11 +104,11 @@ def compute_masks(model, text_prompt, frames_folder, frames_list, ext, multi=Fal
                 outputs = model([imgs], [aug_prompt], [target])
             pred_masks = outputs["pred_masks"]  # [t, h, w]
             pred_masks = pred_masks.unsqueeze(0)
-            pred_masks = F.interpolate(pred_masks, size=(origin_h, origin_w), mode='bilinear', align_corners=False) 
+            # pred_masks = F.interpolate(pred_masks, size=(origin_h, origin_w), mode='bilinear', align_corners=False) 
             pred_masks = (pred_masks.sigmoid() > args.threshold)[0].cpu() 
             all_pred_masks.append(pred_masks)
         else:
-            outputs = multiclass_segmentation(model, imgs, target, size = (origin_h, origin_w)).long()
+            outputs = multiclass_segmentation(model, imgs, target, threshold=args.threshold, size = (origin_h, origin_w)).long()
             all_pred_masks.append(outputs.cpu())
             
     # store the video results
@@ -144,11 +144,18 @@ def inference(args, model, save_path_prefix, in_path, text_prompts):
         os.makedirs(save_visualize_path_dir, exist_ok=True)
         print(f'Saving output to disk in {save_visualize_path_dir}')
         out_files_w_mask = []
+        crop_size = args.max_size
         for t, frame in enumerate(frames_list):
             # original
             img_path = join(frames_folder, frame + ext)
             source_img = Image.open(img_path).convert('RGBA') # PIL image
 
+            source_img = source_img.crop((
+                (source_img.width - crop_size) // 2,
+                (source_img.height - crop_size) // 2,
+                ((source_img.width - crop_size) // 2) + crop_size,
+                ((source_img.height - crop_size) // 2) + crop_size
+            ))
             # draw mask
             if not args.multi_class:
                 source_img = vis_add_mask(source_img, all_pred_masks[t], color_list[i%len(color_list)])
