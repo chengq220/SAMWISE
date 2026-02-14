@@ -167,7 +167,7 @@ def build(image_set, args):
         "val": (root),
     }
     img_folder = PATHS[image_set]
-    dataset = EndoVis2017Dataset(img_folder, os.path.join(img_folder, "annotations/Fold0/train.json"),transforms=make_transforms(),
+    dataset = EndoVis2017Dataset(img_folder, os.path.join(img_folder, "annotations/Fold0/train.json"), transforms=make_transforms(args.max_size),
                                 num_frames=args.num_frames, max_skip=args.max_skip)
     
     return dataset

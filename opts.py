@@ -62,7 +62,7 @@ def get_args_parser():
                         help="Path to Endovis2017 Dataset")
     parser.add_argument('--endovis2018', type=str, default='data/endovis2018',
                         help="Path to Endovis2018 Dataset")
-    parser.add_argument('--max_size', default=512, type=int,
+    parser.add_argument('--max_size', default=1024, type=int,
                         help="Frame size for preprocessing")
     parser.add_argument('--augm_resize', default=False, action='store_true',
                         help="Enable data augmentation with random resizing")
