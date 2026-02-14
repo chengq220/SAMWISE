@@ -17,12 +17,11 @@ from datasets.categories import endovis2017_category_rev_dict as rev_category_di
     endovis2017_category_descriptor_dict as descriptor
 
 class EndoVis2017Dataset(Dataset):
-    def __init__(self, img_folder: Path, ann_file: Path,
+    def __init__(self, img_folder: Path, ann_file: Path, transforms,
                 num_frames: int, max_skip: int):
         self.img_folder = img_folder
         self.ann_file = ann_file
-        self._img_transforms = make_transforms()
-        self._mask_transforms = make_transforms(isMask=True)
+        self._transforms = transforms
         self.num_frames = num_frames
         self.max_skip = max_skip
         self.available_classes = list(rev_category_dict.keys())
@@ -62,6 +61,14 @@ class EndoVis2017Dataset(Dataset):
                         meta['category'] = inst['category_id']
                         self.metas.append(meta)
 
+    @staticmethod
+    def bounding_box(img):
+        rows = np.any(img, axis=1)
+        cols = np.any(img, axis=0)
+        rmin, rmax = np.where(rows)[0][[0, -1]]
+        cmin, cmax = np.where(cols)[0][[0, -1]]
+        return rmin, rmax, cmin, cmax # y1, y2, x1, x2 
+        
     def __len__(self):
         return len(self.metas)
 
@@ -103,7 +110,7 @@ class EndoVis2017Dataset(Dataset):
             sample_indx.sort()
 
             # read frames and masks
-            imgs, masks, valid = [], [], []
+            imgs, boxes, masks, valid = [], [], [], []
             for j in range(self.num_frames):
                 frame_indx = sample_indx[j]
                 cc_id, frame_name = frames[frame_indx]
@@ -117,17 +124,24 @@ class EndoVis2017Dataset(Dataset):
                 mask = (mask==cls).astype(np.float64) 
                 
                 if (mask > 0).any():
+                    y1, y2, x1, x2 = self.bounding_box(mask)
+                    box = torch.tensor([x1, y1, x2, y2]).to(torch.float)
                     valid.append(1)
-                else:
+                else: # some frame didn't contain the instance
+                    box = torch.tensor([0, 0, 0, 0]).to(torch.float) 
                     valid.append(0)
                 mask = torch.from_numpy(mask)
 
                 # append
                 imgs.append(img)
                 masks.append(mask)
+                boxes.append(box)
 
             # transform
             w, h = img.size
+            boxes = torch.stack(boxes, dim=0) 
+            boxes[:, 0::2].clamp_(min=0, max=w)
+            boxes[:, 1::2].clamp_(min=0, max=h)
             masks = torch.stack(masks, dim=0)
  
             descriptions = list(descriptor.get(cls, []))
@@ -138,6 +152,7 @@ class EndoVis2017Dataset(Dataset):
                 'masks': masks,                          # [T, H, W]
                 'valid': torch.tensor(valid),            # [T,]
                 'orig_size': torch.as_tensor([int(h), int(w)]),
+                'boxes': boxes,
                 'size': torch.as_tensor([int(h), int(w)]),
                 'caption': cap,
             }
@@ -154,7 +169,7 @@ class EndoVis2017Dataset(Dataset):
 
 def make_transforms(max_size= 1024):
     return T.Compose([
-        T.CenterCrop(max_size),
+        T.CenterCrop((max_size, max_size)),
         T.ToTensor(),
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
