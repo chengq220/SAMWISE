@@ -33,12 +33,8 @@ class EndoVis2017Dataset(Dataset):
         print('\n')
 
     def prepare_metas(self):
-        folds = list(Path(self.ann_file).glob("*"))
-        folds.remove("images")
-        for fold in folds:
-            curr_ann_path = os.path.join(self.ann_file, fold, "train.json")
             self.videos = defaultdict(list)
-            with open(str(curr_ann_path), 'r') as f:
+            with open(str(self.ann_file), 'r') as f:
                 coco_data = json.load(f)
             self.coco_img = [img['file_name'] for img in coco_data['images']]
             coco_id = [img['id'] for img in coco_data['images']]
@@ -178,7 +174,7 @@ def build(image_set, args):
         "val": (root),
     }
     img_folder = PATHS[image_set]
-    dataset = EndoVis2017Dataset(img_folder, os.path.join(img_folder, "annotations"),
+    dataset = EndoVis2017Dataset(img_folder, os.path.join(img_folder, "annotations/Fold0/train.json"),
                                 num_frames=args.num_frames, max_skip=args.max_skip)
     
     return dataset
