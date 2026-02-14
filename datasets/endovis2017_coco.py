@@ -130,8 +130,9 @@ class EndoVis2017Dataset(Dataset):
                 masks.append(mask)
 
             # transform
-            w, h = img.size
+
             imgs = torch.stack(imgs, dim=0) # [T, 3, H, W]s
+            t, c, w, h = imgs.shape
             masks = torch.stack(masks, dim=0)
  
             descriptions = list(descriptor.get(cls, []))
