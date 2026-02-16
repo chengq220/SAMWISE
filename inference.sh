@@ -5,8 +5,8 @@ python inference.py \
     --input_path data/endovis2017/val1/image \
     --resume output/endovis2017_med/checkpoint0004.pth \
     --num_frames 8 \
-    --text_prompts "Bipolar Forceps" \
-    --threshold 0.6 \
+    --threshold 0.5 \
     --HSA \
     --use_cme_head \
-    --multi_class
+    --create_video \
+    --video_name 'all'

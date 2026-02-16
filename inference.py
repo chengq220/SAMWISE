@@ -59,7 +59,7 @@ def main(args):
         model.load_state_dict(checkpoint['model'], strict=False)
 
     print('Start inference')
-    inference(args, model, save_path_prefix, input_path, args.text_prompts)
+    inference(args, model, save_path_prefix, input_path)
 
     end_time = time.time()
     total_time = end_time - start_time
@@ -83,7 +83,7 @@ def extract_frames_from_mp4(video_path):
     return extract_folder, frames_list, '.png'
 
 
-def compute_masks(model, text_prompt, frames_folder, frames_list, ext, multi=False):
+def compute_masks(model, frames_folder, frames_list, ext, multi=False):
     all_pred_masks = []
     vd = VideoEvalDataset(frames_folder, frames_list, ext=ext)
     dl = DataLoader(vd, batch_size=args.eval_clip_window, num_workers=args.num_workers, shuffle=False)
@@ -96,20 +96,20 @@ def compute_masks(model, text_prompt, frames_folder, frames_list, ext, multi=Fal
         size = torch.as_tensor([int(img_h), int(img_w)]).to(args.device)
         target = {"size": size, 'frame_ids': clip_frames_ids}
 
-        cls = endovis2017_category_dict.get(text_prompt, 7)
-        descriptions = list(endovis2017_category_descriptor_dict.get(cls, []))
-        aug_prompt = f"{text_prompt} with {random.choice(descriptions)}"
-        if not multi:
-            with torch.no_grad():
-                outputs = model([imgs], [aug_prompt], [target])
-            pred_masks = outputs["pred_masks"]  # [t, h, w]
-            pred_masks = pred_masks.unsqueeze(0)
-            pred_masks = F.interpolate(pred_masks, size=(origin_h, origin_w), mode='bilinear', align_corners=False) 
-            pred_masks = (pred_masks.sigmoid() > args.threshold)[0].cpu() 
-            all_pred_masks.append(pred_masks)
-        else:
-            outputs = multiclass_segmentation(model, imgs, target, threshold=args.threshold, size = (origin_h, origin_w)).long()
-            all_pred_masks.append(outputs.cpu())
+        # cls = endovis2017_category_dict.get(text_prompt, 7)
+        # descriptions = list(endovis2017_category_descriptor_dict.get(cls, []))
+        # aug_prompt = f"{text_prompt} with {random.choice(descriptions)}"
+        # if not multi:
+        #     with torch.no_grad():
+        #         outputs = model([imgs], [aug_prompt], [target])
+        #     pred_masks = outputs["pred_masks"]  # [t, h, w]
+        #     pred_masks = pred_masks.unsqueeze(0)
+        #     pred_masks = F.interpolate(pred_masks, size=(origin_h, origin_w), mode='bilinear', align_corners=False) 
+        #     pred_masks = (pred_masks.sigmoid() > args.threshold)[0].cpu() 
+        #     all_pred_masks.append(pred_masks)
+        # else:
+        outputs = multiclass_segmentation(model, imgs, target, threshold=args.threshold, size = (origin_h, origin_w)).long()
+        all_pred_masks.append(outputs.cpu())
             
     # store the video results
     all_pred_masks = torch.cat(all_pred_masks, dim=0).numpy()  # (video_len, h, w)
@@ -118,7 +118,7 @@ def compute_masks(model, text_prompt, frames_folder, frames_list, ext, multi=Fal
     return all_pred_masks
 
     
-def inference(args, model, save_path_prefix, in_path, text_prompts):
+def inference(args, model, save_path_prefix, in_path):
     # load data
     if os.path.isfile(in_path) and not args.image_level:
         frames_folder, frames_list, ext = extract_frames_from_mp4(in_path)
@@ -135,43 +135,45 @@ def inference(args, model, save_path_prefix, in_path, text_prompts):
     model.eval()
     print(f'Begin inference on {len(frames_list)} frames')
     # For each expression
-    for i in range(len(text_prompts)):
-        text_prompt = text_prompts[i]
+    # for i in range(len(text_prompts)):
+    #     text_prompt = text_prompts[i]
+    
+    name = args.video_name
 
-        all_pred_masks = compute_masks(model, text_prompt, frames_folder, frames_list, ext, args.multi_class)
-            
-        save_visualize_path_dir = join(save_path_prefix, text_prompt.replace(' ', '_'))
-        os.makedirs(save_visualize_path_dir, exist_ok=True)
-        print(f'Saving output to disk in {save_visualize_path_dir}')
-        out_files_w_mask = []
-        crop_size = args.max_size
-        for t, frame in enumerate(frames_list):
-            # original
-            img_path = join(frames_folder, frame + ext)
-            source_img = Image.open(img_path).convert('RGBA') # PIL image
-
-            source_img = source_img.crop((
-                (source_img.width - crop_size) // 2,
-                (source_img.height - crop_size) // 2,
-                ((source_img.width - crop_size) // 2) + crop_size,
-                ((source_img.height - crop_size) // 2) + crop_size
-            ))
-            # draw mask
-            if not args.multi_class:
-                source_img = vis_add_mask(source_img, all_pred_masks[t], color_list[i%len(color_list)])
-            else:
-                source_img = vis_add_mask_multiclass(source_img, all_pred_masks[t])
-            # save
-            save_visualize_path = join(save_visualize_path_dir, frame + '.png')
-            source_img.save(save_visualize_path)
-            out_files_w_mask.append(save_visualize_path)
+    all_pred_masks = compute_masks(model, frames_folder, frames_list, ext, args.multi_class)
         
-        if not args.image_level:
-            # Create the video clip from images
-            from moviepy import ImageSequenceClip
-            clip = ImageSequenceClip(out_files_w_mask, fps=10)
-            # Write the video file
-            clip.write_videofile(join(save_path_prefix, text_prompt.replace(' ', '_')+'.mp4'), codec='libx264')
+    save_visualize_path_dir = join(save_path_prefix, name.replace(' ', '_'))
+    os.makedirs(save_visualize_path_dir, exist_ok=True)
+    print(f'Saving output to disk in {save_visualize_path_dir}')
+    out_files_w_mask = []
+    crop_size = args.max_size
+    for t, frame in enumerate(frames_list):
+        # original
+        img_path = join(frames_folder, frame + ext)
+        source_img = Image.open(img_path).convert('RGBA') # PIL image
+
+        source_img = source_img.crop((
+            (source_img.width - crop_size) // 2,
+            (source_img.height - crop_size) // 2,
+            ((source_img.width - crop_size) // 2) + crop_size,
+            ((source_img.height - crop_size) // 2) + crop_size
+        ))
+        # draw mask
+        # if not args.multi_class:
+        #     source_img = vis_add_mask(source_img, all_pred_masks[t], color_list[i%len(color_list)])
+        # else:
+        source_img = vis_add_mask_multiclass(source_img, all_pred_masks[t])
+        # save
+        save_visualize_path = join(save_visualize_path_dir, frame + '.png')
+        source_img.save(save_visualize_path)
+        out_files_w_mask.append(save_visualize_path)
+
+    if not args.image_level and args.create_video:
+        # Create the video clip from images
+        from moviepy import ImageSequenceClip
+        clip = ImageSequenceClip(out_files_w_mask, fps=10)
+        # Write the video file
+        clip.write_videofile(join(save_path_prefix, name.replace(' ', '_')+'.mp4'), codec='libx264')
 
     print(f'Output masks and videos can be found in {save_path_prefix}')
     return 
@@ -211,8 +213,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser('SAMWISE evaluation script', parents=[opts.get_args_parser()])
     parser.add_argument('--input_path', default=None, type=str, required=True, help='path to mp4 video or frames folder')
-    parser.add_argument('--text_prompts', default=[''], type=str, required=True, nargs='+', help="List of referring expressions, separated by whitespace")
-    parser.add_argument('--multi_class', action='store_true', help="Enable multi-class segmentation (default: single-class)")
+    parser.add_argument('--video_name', default='all', type=str, help='name of the mp4 created')
+    parser.add_argument('--create_video', action='store_true', help='whether to create video from output frames')
 
     args = parser.parse_args()
     check_args(args)
