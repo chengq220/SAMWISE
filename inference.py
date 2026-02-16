@@ -96,24 +96,12 @@ def compute_masks(model, frames_folder, frames_list, ext):
         size = torch.as_tensor([int(img_h), int(img_w)]).to(args.device)
         target = {"size": size, 'frame_ids': clip_frames_ids}
 
-        # cls = endovis2017_category_dict.get(text_prompt, 7)
-        # descriptions = list(endovis2017_category_descriptor_dict.get(cls, []))
-        # aug_prompt = f"{text_prompt} with {random.choice(descriptions)}"
-        # if not multi:
-        #     with torch.no_grad():
-        #         outputs = model([imgs], [aug_prompt], [target])
-        #     pred_masks = outputs["pred_masks"]  # [t, h, w]
-        #     pred_masks = pred_masks.unsqueeze(0)
-        #     pred_masks = F.interpolate(pred_masks, size=(origin_h, origin_w), mode='bilinear', align_corners=False) 
-        #     pred_masks = (pred_masks.sigmoid() > args.threshold)[0].cpu() 
-        #     all_pred_masks.append(pred_masks)
-        # else:
         outputs = multiclass_segmentation(model, imgs, target, threshold=args.threshold, size = (origin_h, origin_w)).long()
         all_pred_masks.append(outputs.cpu())
             
     # store the video results
     all_pred_masks = torch.cat(all_pred_masks, dim=0).numpy()  # (video_len, h, w)
-    print(f"Raw logits range: [{all_pred_masks.min():.4f}, {all_pred_masks.max():.4f}]")
+    print(f"Unique classes: {np.unique(all_pred_masks)}")
 
     return all_pred_masks
 
@@ -134,39 +122,34 @@ def inference(args, model, save_path_prefix, in_path):
         
     model.eval()
     print(f'Begin inference on {len(frames_list)} frames')
-    # For each expression
-    # for i in range(len(text_prompts)):
-    #     text_prompt = text_prompts[i]
     
-    name = args.video_name
+    name = args.text_prompts[0]
 
-    all_pred_masks = compute_masks(model, frames_folder, frames_list, ext, args.multi_class)
+    all_pred_masks = compute_masks(model, frames_folder, frames_list, ext)
         
     save_visualize_path_dir = join(save_path_prefix, name.replace(' ', '_'))
     os.makedirs(save_visualize_path_dir, exist_ok=True)
     print(f'Saving output to disk in {save_visualize_path_dir}')
     out_files_w_mask = []
+    mask_path = join(save_visualize_path_dir, os.path.basename(frames_folder))
+    print(mask_path)
+    if not os.path.isdir(mask_path):
+        os.mkdir(mask_path)
     # crop_size = args.max_size
     for t, frame in enumerate(frames_list):
         # original
         img_path = join(frames_folder, frame + ext)
         source_img = Image.open(img_path).convert('RGBA') # PIL image
-
-        # source_img = source_img.crop((
-        #     (source_img.width - crop_size) // 2,
-        #     (source_img.height - crop_size) // 2,
-        #     ((source_img.width - crop_size) // 2) + crop_size,
-        #     ((source_img.height - crop_size) // 2) + crop_size
-        # ))
-        # draw mask
-        # if not args.multi_class:
-        #     source_img = vis_add_mask(source_img, all_pred_masks[t], color_list[i%len(color_list)])
-        # else:
+        
         source_img = vis_add_mask_multiclass(source_img, all_pred_masks[t])
         # save
         save_visualize_path = join(save_visualize_path_dir, frame + '.png')
         source_img.save(save_visualize_path)
         out_files_w_mask.append(save_visualize_path)
+
+        mask_multi = all_pred_masks[t]
+        mask_np = mask_multi.squeeze().astype('uint8')
+        Image.fromarray(mask_np).save(join(mask_path, frame+'.png'))
 
     if not args.image_level and args.create_video:
         # Create the video clip from images
@@ -214,6 +197,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('SAMWISE evaluation script', parents=[opts.get_args_parser()])
     parser.add_argument('--input_path', default=None, type=str, required=True, help='path to mp4 video or frames folder')
     parser.add_argument('--create_video', action='store_true', help='whether to create video from output frames')
+    parser.add_argument('--text_prompts', default=[''], type=str, required=True, nargs='+', help="List of referring expressions, separated by whitespace")
 
     args = parser.parse_args()
     check_args(args)
