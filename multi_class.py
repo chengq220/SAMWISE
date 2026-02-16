@@ -7,6 +7,7 @@ from scipy import ndimage
 
 def multiclass_segmentation(model, images, targets, threshold, size):
     t, q, h, w = images.shape
+    (origin_h, origin_w) = size
     num_classes = 7
     final_seg = torch.zeros((t, h, w), device='cpu', dtype=torch.long)
     confidence_map = torch.zeros((t, h, w), device='cpu')
