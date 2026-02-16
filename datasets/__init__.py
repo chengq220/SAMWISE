@@ -2,8 +2,8 @@ import torch.utils.data
 import torchvision
 
 import datasets.transforms_video as T
-# from .endovis2017 import build as build_endovis2017
-from .endovis2017_coco import build as build_endovis2017
+from .endovis2017 import build as build_endovis2017
+# from .endovis2017_coco import build as build_endovis2017
 
 def get_coco_api_from_dataset(dataset):
     for _ in range(10):

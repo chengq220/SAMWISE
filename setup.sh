@@ -10,10 +10,9 @@ pip install -r requirements.txt
 #Download data
 mkdir data
 cd data
-# gdown --fuzzy "https://drive.google.com/file/d/1XG_lqhQZHBBHb1WM9s9TTu9Gbd4JbND7/view?usp=drive_link"
-gdown --fuzzy "https://drive.google.com/file/d/1JnWoHF72L7JRV_TCDUSJLlXK4SMqNgK7/view?usp=drive_link"
-tar -xvf endovis2017_coco.tar
-rm endovis2017_coco.tar
+gdown --fuzzy "https://drive.google.com/file/d/1A1DpiqkeEIV6lyCl7l6aVTjRzO7TnImI/view?usp=sharing"
+tar -xvf VOS-Endovis17.tar
+rm VOS-Endovis17.tar
 cd ..
 
 #Download pretrain-models
@@ -24,7 +23,7 @@ tar -xzvf RoBERTa-base-PM-fairseq.tar.gz --no-same-owner
 rm RoBERTa-base-PM-fairseq.tar.gz
 
 # sam2.1_hiera_s_endo18.pth
-gdown --fuzzy "https://drive.google.com/file/d/1DyrrLKst1ZQwkgKM7BWCCwLxSXAgOcMI/view?usp=sharing"
+# gdown --fuzzy "https://drive.google.com/file/d/1DyrrLKst1ZQwkgKM7BWCCwLxSXAgOcMI/view?usp=sharing"
 
 # MedSAM2 
-# wget "https://huggingface.co/wanglab/MedSAM2/resolve/main/MedSAM2_latest.pt"
+wget "https://huggingface.co/wanglab/MedSAM2/resolve/main/MedSAM2_latest.pt"
