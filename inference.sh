@@ -9,4 +9,4 @@ python inference.py \
     --HSA \
     --use_cme_head \
     --create_video \
-    --video_name 'all'
+    --text_prompts 'all'

@@ -83,7 +83,7 @@ def extract_frames_from_mp4(video_path):
     return extract_folder, frames_list, '.png'
 
 
-def compute_masks(model, frames_folder, frames_list, ext, multi=False):
+def compute_masks(model, frames_folder, frames_list, ext):
     all_pred_masks = []
     vd = VideoEvalDataset(frames_folder, frames_list, ext=ext)
     dl = DataLoader(vd, batch_size=args.eval_clip_window, num_workers=args.num_workers, shuffle=False)
@@ -146,18 +146,18 @@ def inference(args, model, save_path_prefix, in_path):
     os.makedirs(save_visualize_path_dir, exist_ok=True)
     print(f'Saving output to disk in {save_visualize_path_dir}')
     out_files_w_mask = []
-    crop_size = args.max_size
+    # crop_size = args.max_size
     for t, frame in enumerate(frames_list):
         # original
         img_path = join(frames_folder, frame + ext)
         source_img = Image.open(img_path).convert('RGBA') # PIL image
 
-        source_img = source_img.crop((
-            (source_img.width - crop_size) // 2,
-            (source_img.height - crop_size) // 2,
-            ((source_img.width - crop_size) // 2) + crop_size,
-            ((source_img.height - crop_size) // 2) + crop_size
-        ))
+        # source_img = source_img.crop((
+        #     (source_img.width - crop_size) // 2,
+        #     (source_img.height - crop_size) // 2,
+        #     ((source_img.width - crop_size) // 2) + crop_size,
+        #     ((source_img.height - crop_size) // 2) + crop_size
+        # ))
         # draw mask
         # if not args.multi_class:
         #     source_img = vis_add_mask(source_img, all_pred_masks[t], color_list[i%len(color_list)])
@@ -213,7 +213,6 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser('SAMWISE evaluation script', parents=[opts.get_args_parser()])
     parser.add_argument('--input_path', default=None, type=str, required=True, help='path to mp4 video or frames folder')
-    parser.add_argument('--video_name', default='all', type=str, help='name of the mp4 created')
     parser.add_argument('--create_video', action='store_true', help='whether to create video from output frames')
 
     args = parser.parse_args()
