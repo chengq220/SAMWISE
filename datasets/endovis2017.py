@@ -131,8 +131,9 @@ class EndoVis2017Dataset(Dataset):
                 boxes[:, 1::2].clamp_(min=0, max=h)
                 masks = torch.stack(masks, dim=0)
     
-                descriptions = list(descriptor.get(cls, []))
-                cap = f"{rev_category_dict.get(cls, 'other')} with {random.choice(descriptions)}"
+                # descriptions = list(descriptor.get(cls, []))
+                # cap = f"{rev_category_dict.get(cls, 'other')} with {random.choice(descriptions)}"
+                cap = rev_category_dict.get(cls, 'other')
 
                 target = {
                     'frames_idx': torch.tensor(sample_indx), # [T,]
