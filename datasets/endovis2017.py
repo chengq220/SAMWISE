@@ -52,8 +52,17 @@ class EndoVis2017Dataset(Dataset):
                     meta['video'] = vid_name
                     meta['frames'] = vid_frames
                     meta['frame_id'] = frame_id
-                    meta['category'] = cls
+                    meta['category'] = (cls,1)
                     self.metas.append(meta)
+                # negative = [cls for cls in self.available_classes if cls not in set(category)]
+                # neg_cls = random.sample(negative, 1)
+                # for cls in neg_cls: # negative classes
+                #     meta = {}
+                #     meta['video'] = vid_name
+                #     meta['frames'] = vid_frames
+                #     meta['frame_id'] = frame_id
+                #     meta['category'] = (cls, 0)
+                #     self.metas.append(meta)
     @staticmethod
     def bounding_box(img):
         rows = np.any(img, axis=1)
@@ -70,7 +79,7 @@ class EndoVis2017Dataset(Dataset):
             while not instance_check:
                 meta = self.metas[idx]  # dict
 
-                video, frames, frame_id, cls = \
+                video, frames, frame_id, (cls, is_instance) = \
                             meta['video'], meta['frames'], meta['frame_id'], meta['category']
 
                 vid_len = len(frames)
@@ -137,10 +146,13 @@ class EndoVis2017Dataset(Dataset):
                 boxes[:, 0::2].clamp_(min=0, max=w)
                 boxes[:, 1::2].clamp_(min=0, max=h)
                 masks = torch.stack(masks, dim=0)
-    
-                # descriptions = list(descriptor.get(cls, []))
-                # cap = f"{rev_category_dict.get(cls, 'other')} with {random.choice(descriptions)}"
-                cap = rev_category_dict.get(cls, 'other')
+
+                if(is_instance == 1):
+                    # descriptions = list(descriptor.get(cls, []))
+                    # cap = f"{rev_category_dict.get(cls, 'other')} with {random.choice(descriptions)}"
+                    cap = rev_category_dict.get(cls, 'other')
+                else:
+                    cap = f"No {rev_category_dict.get(cls, 'other')}"
 
                 target = {
                     'frames_idx': torch.tensor(sample_indx), # [T,]
