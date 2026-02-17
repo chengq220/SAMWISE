@@ -11,7 +11,6 @@ class LCMT_adapter(nn.Module):
                  in_channels_vis,
                  in_channels_txt,
                  adapter_channels,
-                 adapter_layer,
                  HSA_patch_size=2,
                  args=None):
         super().__init__()

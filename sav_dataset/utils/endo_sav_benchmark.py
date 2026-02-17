@@ -157,7 +157,7 @@ class VideoEvaluator:
             obj_id_str = str(obj_id)
             # Use the same frames and paths for all objects
             to_evaluate.append((valid_frames.copy(), obj_id_str, vid_gt_path, vid_pred_path))
-            print(f"Added object {obj_id} with {len(valid_frames)} frames")
+            # print(f"Added object {obj_id} with {len(valid_frames)} frames")
         
         return to_evaluate, False
 

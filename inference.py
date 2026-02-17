@@ -19,6 +19,7 @@ from models.samwise import build_samwise
 from util.misc import on_load_checkpoint
 from datasets.transform_utils import VideoEvalDataset
 from torch.utils.data import DataLoader
+import torchvision.transforms as TF
 from os.path import join
 from datasets.transform_utils import vis_add_mask, vis_add_mask_multiclass
 from datasets.categories import endovis2017_category_dict, endovis2017_category_descriptor_dict
@@ -131,19 +132,40 @@ def inference(args, model, save_path_prefix, in_path):
     os.makedirs(save_visualize_path_dir, exist_ok=True)
     print(f'Saving output to disk in {save_visualize_path_dir}')
     out_files_w_mask = []
-    mask_path = join(save_visualize_path_dir, os.path.basename(frames_folder))
-    print(mask_path)
+    mask_path = join(save_visualize_path_dir, "pred", os.path.basename(frames_folder))
+    gt_save_path = join(save_visualize_path_dir, "gt", os.path.basename(frames_folder))
+    overlay_path = join(save_visualize_path_dir, "viz")
     if not os.path.isdir(mask_path):
-        os.mkdir(mask_path)
+        os.makedirs(mask_path)
+    if not os.path.isdir(gt_save_path):
+        os.makedirs(gt_save_path)
+    if not os.path.isdir(overlay_path):
+        os.makedirs(overlay_path)
+    transform = TF.Compose([
+        # TF.Resize(args.max_size-4, max_size=args.max_size),
+        TF.CenterCrop(args.max_size),
+    ])
     # crop_size = args.max_size
     for t, frame in enumerate(frames_list):
         # original
         img_path = join(frames_folder, frame + ext)
+        mask_path_open = img_path.replace('JPEGImages','Annotations')
+        
         source_img = Image.open(img_path).convert('RGBA') # PIL image
+        source_img = transform(source_img)
+
+        # print(source_img.size)
+
+        source_mask = Image.open(mask_path_open).convert('L')
+        source_mask = transform(source_mask)
+
+        # print(source_mask.size)
+        
+        source_mask.save(os.path.join(gt_save_path, frame + '.png'))
         
         source_img = vis_add_mask_multiclass(source_img, all_pred_masks[t])
         # save
-        save_visualize_path = join(save_visualize_path_dir, frame + '.png')
+        save_visualize_path = join(overlay_path, frame + '.png')
         source_img.save(save_visualize_path)
         out_files_w_mask.append(save_visualize_path)
 
