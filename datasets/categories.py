@@ -9,14 +9,14 @@ endovis2017_category_dict = {
     "Ultrasound Probe": 7
 }
 
-endovis2017_category_rev_dict = {
-	1: "Bipolar Forceps",
-	2: "Prograsp Forceps",
-	3: "Large Needle Driver",
-	4: "Vessel Sealer",
-	5: "Grasping Retractor",
-    6: "Monopolar Curved Scissors",
-    7: "Ultrasound Probe"
+endovis2017_category_rev_verb_dict = {
+	1: "Bipolar Forceps grasping and coagulating tissue",
+	2: "Prograsp Forceps retracting and stabilizing",
+	3: "Large Needle Driver suturing and piercing",
+	4: "Vessel Sealer sealing and cauterizing vessels",
+	5: "Grasping Retractor holding back and exposing tissue",
+    6: "Monopolar Curved Scissors cutting and dissecting",
+    7: "Ultrasound Probe scanning and imaging"
 }
 
 endovis2017_category_descriptor_dict = {

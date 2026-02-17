@@ -13,7 +13,7 @@ import numpy as np
 import random
 
 from datasets.categories import endovis2017_category_rev_dict as rev_category_dict, \
-    endovis2017_category_descriptor_dict as descriptor
+    endovis2017_category_descriptor_dict as descriptor, endovis2017_category_rev_verb_dict as verb_dict
 
 class EndoVis2017Dataset(Dataset):
     def __init__(self, img_folder: Path, transforms,
@@ -150,7 +150,7 @@ class EndoVis2017Dataset(Dataset):
                 if(is_instance == 1):
                     # descriptions = list(descriptor.get(cls, []))
                     # cap = f"{rev_category_dict.get(cls, 'other')} with {random.choice(descriptions)}"
-                    cap = rev_category_dict.get(cls, 'other')
+                    cap = verb_dict.get(cls, 'Ultrasound Probe scanning and imaging')
                 else:
                     cap = f"No {rev_category_dict.get(cls, 'other')}"
 
