@@ -6,7 +6,7 @@ from sav_dataset.utils.endo_sav_benchmark import benchmark
 def evaluate(args):
     benchmark(
         [args.gt_root],
-        [args.output_mask_dir],
+        [args.pred_root],
         args.strict,
         args.num_processes,
         verbose=not args.quiet,
@@ -18,7 +18,7 @@ def evaluate(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--base_video_dir",
+        "--pred_root",
         type=str,
         required=True,
         help="directory containing videos (as JPEG files) to run VOS prediction on",
