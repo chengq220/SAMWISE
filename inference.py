@@ -129,7 +129,7 @@ def compute_masks(model, text_prompt, frames_folder, frames_list, ext):
             
     # store the video results
     all_pred_masks = torch.cat(all_pred_masks, dim=0).numpy()  # (video_len, h, w)
-    all_pred_logits = torch.cat(all_pred_logits, dim=0).numpy()  # (video_len, h, w)
+    all_pred_logits = torch.cat(all_pred_logits, dim=0).unsqueeze(1)  # (video_len, 1, h, w)
     print(f"Raw logits range: [{all_pred_masks.min():.4f}, {all_pred_masks.max():.4f}]")
 
     return all_pred_masks, all_pred_logits
@@ -174,7 +174,7 @@ def inference(args, model, save_path_prefix, in_path, text_prompts):
         all_pred_masks, all_pred_logits = compute_masks(model, text_prompt, frames_folder, frames_list, ext)
         obj_logits[id] = all_pred_logits
             
-        save_visualize_path_dir = join(save_path_prefix, text_prompt.replace(' ', '_'), in_path_folder, str(id))
+        save_visualize_path_dir = join(save_path_prefix, text_prompt.replace(' ', '_'), 'viz', in_path_folder, str(id))
         save_mask_path_dir = join(save_path_prefix, text_prompt.replace(' ', '_'), "pred", in_path_folder, str(id))
         
         os.makedirs(save_visualize_path_dir, exist_ok=True)
@@ -191,32 +191,49 @@ def inference(args, model, save_path_prefix, in_path, text_prompts):
             img_path = join(frames_folder, frame + ext)
             source_img = Image.open(img_path).convert('RGBA') # PIL image
 
-            # draw mask
             source_img = vis_add_mask(source_img, all_pred_masks[t], color_list[id%len(color_list)])
-            # save
+     
             save_visualize_path = join(save_visualize_path_dir, frame + '.png')
             source_img.save(save_visualize_path)
 
-    video_segments = {} 
+    first_logits = next(iter(obj_logits.values()))
+    num_frames, _, h, w = first_logits.shape  # num_frames, 1, height, width
+    object_ids = sorted(list(obj_logits.keys()))
+    num_objects = len(object_ids)
 
-    for frame_idx in range(len(frames_list)):
+    video_segments = {} 
+    multiclass_masks = {} 
+
+    for frame_idx in range(num_frames):
         scores = torch.full(
-            size=(len(object_ids), 1, height, width),
+            size=(num_objects, 1, h, w),
             fill_value=-1024.0,
             dtype=torch.float32,
         )
+    
         for i, object_id in enumerate(object_ids):
-            if frame_idx in output_scores_per_object[object_id]:
-                scores[i] = torch.from_numpy(
-                    output_scores_per_object[object_id][frame_idx]
-                )
-
+            if frame_idx in obj_logits[object_id]:
+                scores[i] = obj_logits[object_id][frame_idx]
+        
         scores = apply_non_overlapping_constraints(scores)
         per_obj_output_mask = {
             object_id: (scores[i] > args.threshold).cpu()
             for i, object_id in enumerate(object_ids)
         }
         video_segments[frame_idx] = per_obj_output_mask
+        
+        multiclass_mask = np.zeros((h, w), dtype=np.uint8)
+        for object_id in sorted(object_ids, reverse=True):
+            object_mask = per_obj_output_mask[object_id].numpy().squeeze()
+            multiclass_mask[object_mask] = object_id
+    
+        multiclass_masks[frame_idx] = multiclass_mask
+
+    save_visualize_multi_path = join(save_path_prefix, text_prompt.replace(' ', '_'), 'pred', in_path_folder, 'all')
+    os.makedirs(save_visualize_multi_path, exist_ok=True)
+    for frame_idx, mask in multiclass_masks.items():
+        Image.fromarray(mask).save(join(save_visualize_multi_path, f"frame_{frame_idx:05d}.png"))
+
     print(f'Output masks and videos can be found in {save_path_prefix}')
     return 
 
