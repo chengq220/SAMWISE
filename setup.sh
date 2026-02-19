@@ -10,9 +10,9 @@ pip install -r requirements.txt
 #Download data
 mkdir data
 cd data
-gdown --fuzzy "https://drive.google.com/file/d/1vkJbJ7JSQrq--Qze-E2_WL1xJeaLWsZx/view?usp=sharing"
-tar -xvf VOS-Endovis17.tar
-rm VOS-Endovis17.tar
+gdown --fuzzy "https://drive.google.com/file/d/1f3qdi7J2GsHGDmxdc4vXaf6ZsFGa_vOH/view?usp=sharing"
+tar -xvf endovis2018_new.tar
+rm endovis2018_new.tar
 cd ..
 
 #Download pretrain-models
