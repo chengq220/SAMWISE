@@ -240,7 +240,7 @@ class SAMWISE(nn.Module):
                 if rt != '<s>' and rt != '</s>':
                     for token in doc:
                         if token.idx <= start and (token.idx + len(token.text)) >= end:
-                            if token.pos_ == 'ADJ':
+                            if token.pos_ == 'VERB':
                                 motion_map[caption_index][index] = 1
         return motion_map
     

@@ -157,13 +157,12 @@ class VideoEvalDataset(Dataset):
         self.frames = frames
         self.vid_len = len(frames)
         self.ext = ext
+        self.origin_w, self.origin_h = Image.open(join(vid_folder, frames[0]+ext)).size
         self.transform = TF.Compose([
-            TF.CenterCrop(max_size),
-            # TF.Resize(max_size-4, max_size=max_size),
+            TF.Resize(max_size-4, max_size=max_size), #T.Resize(360),
             TF.ToTensor(),
             TF.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
-        self.origin_h, self.origin_w = self.transform(Image.open(join(vid_folder, frames[0]+ext))).shape[-2:]
             
     def __len__(self):
         return self.vid_len

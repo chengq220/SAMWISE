@@ -1,10 +1,9 @@
 '''
-Inference code for SAMWISE
+Inference code for SAMWISE, on Ref-Youtube-VOS
 Modified from DETR (https://github.com/facebookresearch/detr)
 '''
 
 import argparse
-from collections import defaultdict
 import random
 import time
 import numpy as np
@@ -20,10 +19,11 @@ from models.samwise import build_samwise
 from util.misc import on_load_checkpoint
 from datasets.transform_utils import VideoEvalDataset
 from torch.utils.data import DataLoader
+import torchvision.transforms as TF
 from os.path import join
 from datasets.transform_utils import vis_add_mask, vis_add_mask_multiclass
-from datasets.categories import endovis2017_category_dict, endovis2017_category_verb_dict
-import glob
+from datasets.categories import endovis2017_category_dict, endovis2017_category_descriptor_dict
+from multi_class import multiclass_segmentation
 
 
 # colormap
@@ -60,7 +60,7 @@ def main(args):
         model.load_state_dict(checkpoint['model'], strict=False)
 
     print('Start inference')
-    inference(args, model, save_path_prefix, input_path, args.text_prompts)
+    inference(args, model, save_path_prefix, input_path)
 
     end_time = time.time()
     total_time = end_time - start_time
@@ -83,29 +83,9 @@ def extract_frames_from_mp4(video_path):
 
     return extract_folder, frames_list, '.png'
 
-def apply_non_overlapping_constraints(pred_masks):
-    """
-    Apply non-overlapping constraints to the object scores in pred_masks. Here we
-    keep only the highest scoring object at each spatial location in pred_masks.
-    """
-    batch_size = pred_masks.size(0)
-    if batch_size == 1:
-        return pred_masks
 
-    device = pred_masks.device
-    # "max_obj_inds": object index of the object with the highest score at each location
-    max_obj_inds = torch.argmax(pred_masks, dim=0, keepdim=True)
-    # "batch_obj_inds": object index of each object slice (along dim 0) in `pred_masks`
-    batch_obj_inds = torch.arange(batch_size, device=device)[:, None, None, None]
-    keep = max_obj_inds == batch_obj_inds
-    # suppress overlapping regions' scores below -10.0 so that the foreground regions
-    # don't overlap (here sigmoid(-10.0)=4.5398e-05)
-    pred_masks = torch.where(keep, pred_masks, torch.clamp(pred_masks, max=-10.0))
-    return pred_masks
-
-def compute_masks(model, text_prompt, frames_folder, frames_list, ext):
+def compute_masks(model, frames_folder, frames_list, ext):
     all_pred_masks = []
-    all_pred_logits = []
     vd = VideoEvalDataset(frames_folder, frames_list, ext=ext)
     dl = DataLoader(vd, batch_size=args.eval_clip_window, num_workers=args.num_workers, shuffle=False)
     origin_w, origin_h = vd.origin_w, vd.origin_h
@@ -117,36 +97,17 @@ def compute_masks(model, text_prompt, frames_folder, frames_list, ext):
         size = torch.as_tensor([int(img_h), int(img_w)]).to(args.device)
         target = {"size": size, 'frame_ids': clip_frames_ids}
 
-        with torch.no_grad():
-            outputs = model([imgs], [text_prompt], [target])
-        pred_masks = outputs["pred_masks"]  # [t, h, w]
-        pred_masks = pred_masks.unsqueeze(0)
-        pred_masks = F.interpolate(pred_masks, size=(origin_h, origin_w), mode='bilinear',
-                    align_corners=False)
-        all_pred_logits.append(pred_masks.cpu())
-        pred_masks = pred_masks.sigmoid()[0]  # [t, h, w]
-        all_pred_masks.append(pred_masks)
+        outputs = multiclass_segmentation(model, imgs, target, threshold=args.threshold, size = (origin_h, origin_w)).long()
+        all_pred_masks.append(outputs.cpu())
             
     # store the video results
     all_pred_masks = torch.cat(all_pred_masks, dim=0).numpy()  # (video_len, h, w)
-    all_pred_logits = torch.cat(all_pred_logits, dim=0).numpy()  # (video_len, h, w)
-    print(f"Raw logits range: [{all_pred_masks.min():.4f}, {all_pred_masks.max():.4f}]")
+    print(f"Unique classes: {np.unique(all_pred_masks)}")
 
-    return all_pred_masks, all_pred_logits
-
-def get_masks_id(masks_path):
-    vos_path = list(glob.glob(join(masks_path, '*.png')))
-    obj_id_list = []
-    for mask in vos_path:
-        obj_img = Image.open(mask).convert('L')
-        obj_id = np.unique(obj_img)
-        for id in obj_id:
-            if id not in obj_id_list and id != 0:
-                obj_id_list.append(id)
-    return obj_id_list
+    return all_pred_masks
 
     
-def inference(args, model, save_path_prefix, in_path, text_prompts):
+def inference(args, model, save_path_prefix, in_path):
     # load data
     if os.path.isfile(in_path) and not args.image_level:
         frames_folder, frames_list, ext = extract_frames_from_mp4(in_path)
@@ -162,38 +123,58 @@ def inference(args, model, save_path_prefix, in_path, text_prompts):
         
     model.eval()
     print(f'Begin inference on {len(frames_list)} frames')
+    
+    name = args.text_prompts[0]
 
-    obj_id_list = get_masks_id(args.mask_input)
-    print(f"Object IDs found in VOS masks: {obj_id_list}")
-    in_path_folder = os.path.basename(in_path)
-    obj_logits = defaultdict(torch.Tensor)
-    # For each expression
-    for id in obj_id_list:
-        text_prompt = endovis2017_category_verb_dict.get(id, "Ultrasound Probe scanning and visualizing internal structures")
+    all_pred_masks = compute_masks(model, frames_folder, frames_list, ext)
+        
+    save_visualize_path_dir = join(save_path_prefix, name.replace(' ', '_'))
+    os.makedirs(save_visualize_path_dir, exist_ok=True)
+    print(f'Saving output to disk in {save_visualize_path_dir}')
+    out_files_w_mask = []
+    mask_path = join(save_visualize_path_dir, "pred", os.path.basename(frames_folder))
+    gt_save_path = join(save_visualize_path_dir, "gt", os.path.basename(frames_folder))
+    overlay_path = join(save_visualize_path_dir, "viz")
+    if not os.path.isdir(mask_path):
+        os.makedirs(mask_path)
+    if not os.path.isdir(gt_save_path):
+        os.makedirs(gt_save_path)
+    if not os.path.isdir(overlay_path):
+        os.makedirs(overlay_path)
+    transform = TF.Compose([
+        # TF.Resize(args.max_size-4, max_size=args.max_size),
+        TF.CenterCrop(args.max_size),
+    ])
+    # crop_size = args.max_size
+    for t, frame in enumerate(frames_list):
+        # original
+        img_path = join(frames_folder, frame + ext)
+        mask_path_open = img_path.replace('JPEGImages','Annotations')
+        
+        source_img = Image.open(img_path).convert('RGBA') # PIL image
+        source_img = transform(source_img)
 
-        all_pred_masks, all_pred_logits = compute_masks(model, text_prompt, frames_folder, frames_list, ext)
-        obj_logits[id] = all_pred_logits
-            
-        save_visualize_path_dir = join(save_path_prefix, text_prompt.replace(' ', '_'), in_path_folder, str(id))
-        save_mask_path_dir = join(save_path_prefix, text_prompt.replace(' ', '_'), "pred", in_path_folder, str(id))
-        os.makedirs(save_visualize_path_dir, exist_ok=True)
-        os.makedirs(save_mask_path_dir, exist_ok=True)
-        print(f'Saving output to disk in {save_visualize_path_dir}')
-        for t, frame in enumerate(frames_list):
-            cur_mask = all_pred_masks[t]
-            cur_mask = cur_mask.reshape(cur_mask.shape[0], cur_mask.shape[1]).astype('uint8')
-            pil_mask = Image.fromarray(cur_mask)
-            save_mask_path = join(save_mask_path_dir, frame + '.png')
-            pil_mask.save(save_mask_path)
+        source_mask = Image.open(mask_path_open).convert('L')
+        source_mask = transform(source_mask)
+        
+        source_mask.save(os.path.join(gt_save_path, frame + '.png'))
+        
+        source_img = vis_add_mask_multiclass(source_img, all_pred_masks[t])
+        # save
+        save_visualize_path = join(overlay_path, frame + '.png')
+        source_img.save(save_visualize_path)
+        out_files_w_mask.append(save_visualize_path)
 
-            img_path = join(frames_folder, frame + ext)
-            source_img = Image.open(img_path).convert('RGBA') # PIL image
+        mask_multi = all_pred_masks[t]
+        mask_np = mask_multi.squeeze().astype('uint8')
+        Image.fromarray(mask_np).save(join(mask_path, frame+'.png'))
 
-            # draw mask
-            source_img = vis_add_mask(source_img, all_pred_masks[t], color_list[id%len(color_list)])
-            # save
-            save_visualize_path = join(save_visualize_path_dir, frame + '.png')
-            source_img.save(save_visualize_path)
+    if not args.image_level and args.create_video:
+        # Create the video clip from images
+        from moviepy import ImageSequenceClip
+        clip = ImageSequenceClip(out_files_w_mask, fps=10)
+        # Write the video file
+        clip.write_videofile(join(save_path_prefix, name.replace(' ', '_')+'.mp4'), codec='libx264')
 
     print(f'Output masks and videos can be found in {save_path_prefix}')
     return 
@@ -233,7 +214,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser('SAMWISE evaluation script', parents=[opts.get_args_parser()])
     parser.add_argument('--input_path', default=None, type=str, required=True, help='path to mp4 video or frames folder')
-    parser.add_argument('--mask_input', default=None, type=str, required=True, help='path to mask inputs')
+    parser.add_argument('--create_video', action='store_true', help='whether to create video from output frames')
+    parser.add_argument('--text_prompts', default=[''], type=str, required=True, nargs='+', help="List of referring expressions, separated by whitespace")
 
     args = parser.parse_args()
     check_args(args)

@@ -19,6 +19,16 @@ endovis2017_category_rev_dict = {
     7: "Ultrasound Probe"
 }
 
+endovis2017_category_verb_dict ={
+    1: "Bipolar Forceps grasping and coagulating tissue",
+    2: "Prograsp Forceps retracting and manipulating tissue", 
+    3: "Large Needle Driver driving sutures through tissue",
+    4: "Vessel Sealer sealing and dividing blood vessels",
+    5: "Grasping Retractor holding back organs for exposure",
+    6: "Monopolar Curved Scissors cutting and cauterizing tissue",
+    7: "Ultrasound Probe scanning and visualizing internal structures"
+}
+
 endovis2017_category_descriptor_dict = {
     1: {
         "two insulated tines with small gap between tips",

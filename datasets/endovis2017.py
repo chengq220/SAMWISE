@@ -176,7 +176,7 @@ class EndoVis2017Dataset(Dataset):
 
 def make_transforms(max_size=1024):
     return T.Compose([
-        T.CenterCrop((max_size, max_size)),
+        # T.CenterCrop((max_size, max_size)),
         # T.Resize(max_size-4, max_size),
         T.ToTensor(),
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
