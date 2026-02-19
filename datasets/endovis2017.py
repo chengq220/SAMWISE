@@ -183,7 +183,8 @@ def make_transforms(max_size=1024):
     ])
 
 def build(image_set, args):
-    root = Path(args.endovis2017)
+    # root = Path(args.endovis2017)
+    root = Path(args.endovis2018)
     assert root.exists(), f'provided path {root} does not exist'
     PATHS = {
         "train": (root / "train"),
