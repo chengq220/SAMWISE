@@ -176,8 +176,10 @@ def inference(args, model, save_path_prefix, in_path, text_prompts):
             
         save_visualize_path_dir = join(save_path_prefix, text_prompt.replace(' ', '_'), in_path_folder, str(id))
         save_mask_path_dir = join(save_path_prefix, text_prompt.replace(' ', '_'), "pred", in_path_folder, str(id))
+        
         os.makedirs(save_visualize_path_dir, exist_ok=True)
         os.makedirs(save_mask_path_dir, exist_ok=True)
+
         print(f'Saving output to disk in {save_visualize_path_dir}')
         for t, frame in enumerate(frames_list):
             cur_mask = all_pred_masks[t]
@@ -195,6 +197,26 @@ def inference(args, model, save_path_prefix, in_path, text_prompts):
             save_visualize_path = join(save_visualize_path_dir, frame + '.png')
             source_img.save(save_visualize_path)
 
+    video_segments = {} 
+
+    for frame_idx in range(len(frames_list)):
+        scores = torch.full(
+            size=(len(object_ids), 1, height, width),
+            fill_value=-1024.0,
+            dtype=torch.float32,
+        )
+        for i, object_id in enumerate(object_ids):
+            if frame_idx in output_scores_per_object[object_id]:
+                scores[i] = torch.from_numpy(
+                    output_scores_per_object[object_id][frame_idx]
+                )
+
+        scores = apply_non_overlapping_constraints(scores)
+        per_obj_output_mask = {
+            object_id: (scores[i] > args.threshold).cpu()
+            for i, object_id in enumerate(object_ids)
+        }
+        video_segments[frame_idx] = per_obj_output_mask
     print(f'Output masks and videos can be found in {save_path_prefix}')
     return 
 
