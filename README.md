@@ -12,12 +12,8 @@ bash setup.sh
 bash train.sh
 ```
 
-### Evaluation
-```
-bash evaluate.sh
-```
-
-### Inference
+### Inference/Evaluation
 ```
 bash inference.sh
+bash evaluate.sh
 ```
