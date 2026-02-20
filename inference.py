@@ -24,6 +24,7 @@ from os.path import join
 from datasets.transform_utils import vis_add_mask, vis_add_mask_multiclass
 from datasets.categories import endovis2017_category_dict, endovis2017_category_verb_dict
 import glob
+import torchvision.transforms as TF
 
 
 # colormap
@@ -134,11 +135,12 @@ def compute_masks(model, text_prompt, frames_folder, frames_list, ext):
 
     return all_pred_masks, all_pred_logits
 
-def get_masks_id(masks_path):
+def get_masks_id(masks_path, transform):
     vos_path = list(glob.glob(join(masks_path, '*.png')))
     obj_id_list = []
     for mask in vos_path:
         obj_img = Image.open(mask).convert('L')
+        obj_img = transform(obj_img)
         obj_id = np.unique(obj_img)
         for id in obj_id:
             if id not in obj_id_list and id != 0:
@@ -163,7 +165,8 @@ def inference(args, model, save_path_prefix, in_path, text_prompts):
     model.eval()
     print(f'Begin inference on {len(frames_list)} frames')
 
-    obj_id_list = get_masks_id(args.mask_input)
+    transform = TF.Compose([TF.CenterCrop(args.max_size)])
+    obj_id_list = get_masks_id(args.mask_input, transform)
     print(f"Object IDs found in VOS masks: {obj_id_list}")
     in_path_folder = os.path.basename(in_path)
     obj_logits = defaultdict(torch.Tensor)
@@ -192,6 +195,7 @@ def inference(args, model, save_path_prefix, in_path, text_prompts):
 
             img_path = join(frames_folder, frame + ext)
             source_img = Image.open(img_path).convert('RGBA') # PIL image
+            source_img = transform(source_img)
 
             source_img = vis_add_mask(source_img, all_pred_masks[t], color_list[id%len(color_list)])
      
@@ -237,6 +241,7 @@ def inference(args, model, save_path_prefix, in_path, text_prompts):
     for mask, frame_idx in zip(multiclass_masks.items(), frames_list):
         img_path = join(frames_folder, frame_idx + ext)
         source_img = Image.open(img_path).convert('RGBA') # PIL image
+        source_img = transform(source_img)
         save_path_all = join(save_mask_multi_path, f"{frame_idx}.png")
         Image.fromarray(mask[1]).save(save_path_all)
 

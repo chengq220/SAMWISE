@@ -22,6 +22,7 @@ import numpy as np
 import tqdm
 from PIL import Image
 from skimage.morphology import disk
+import torchvision.transforms as TF
 
 class VideoEvaluator:
     def __init__(self, gt_root, pred_root, skip_first_and_last=True) -> None:
@@ -34,6 +35,7 @@ class VideoEvaluator:
         self.gt_root = gt_root
         self.pred_root = pred_root
         self.skip_first_and_last = skip_first_and_last
+        self.transform = TF.Compose([TF.CenterCrop(1024)])
 
     def __call__(self, data) -> Tuple[str, Dict[str, float], Dict[str, float], Dict[str, float]]:
         """
@@ -55,7 +57,7 @@ class VideoEvaluator:
             evaluator = Evaluator(name=vid_name, obj_id=obj_id)
             for frame in all_frames:
                 gt_array, pred_array = self.get_gt_and_pred(
-                    gt_path, pred_path, frame, is_sav_format, object_id=obj_id
+                    gt_path, pred_path, frame, is_sav_format, object_id=obj_id, transform=self.transform
                 )
                 evaluator.feed_frame(mask=pred_array, gt=gt_array, frame=frame, object_id=obj_id)
             iou, boundary_f, dice = evaluator.conclude()
@@ -78,6 +80,7 @@ class VideoEvaluator:
         f_name: str,
         is_sav_format: bool,
         object_id: int = 0,
+        transform = None
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Get the ground-truth and predicted masks for a single frame.
@@ -86,7 +89,11 @@ class VideoEvaluator:
         pred_mask_path = path.join(pred_path, f_name)
         assert os.path.exists(pred_mask_path), f"{pred_mask_path} not found"
 
-        gt_array = np.array(Image.open(gt_mask_path))
+        # gt_array = np.array(Image.open(gt_mask_path))
+        gt_img = Image.open(gt_mask_path)
+        if transform:
+            gt_img = transform(gt_img)
+        gt_array = np.array(gt_img)
         pred_array = np.array(Image.open(pred_mask_path))
         assert (
             gt_array.shape[-2:] == pred_array.shape[-2:]
