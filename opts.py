@@ -57,7 +57,7 @@ def get_args_parser():
 
     # dataset settings
     parser.add_argument('--dataset_file', default='endovis2017', type=str,
-                        help="Dataset to use: ['endovis2017', endovis2018]")
+                        help="Dataset to use: ['endovis2017', 'endovis2018']")
     parser.add_argument('--endovis2017', type=str, default='data/endovis2017',
                         help="Path to Endovis2017 Dataset")
     parser.add_argument('--endovis2018', type=str, default='data/endovis2018',

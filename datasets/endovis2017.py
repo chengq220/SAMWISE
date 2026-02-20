@@ -183,9 +183,12 @@ def make_transforms(max_size=1024):
     ])
 
 def build(image_set, args):
-    # root = Path(args.endovis2017)
-    root = Path(args.endovis2018)
-    assert root.exists(), f'provided path {root} does not exist'
+    if(args.dataset_file == 'endovis2017'):
+        root = Path(args.endovis2017)
+    elif(args.dataset_file == 'endovis2018'):
+        root = Path(args.endovis2018)
+    else:
+        raise ValueError(f"dataset {args.dataset_file} not supported.")
     PATHS = {
         "train": (root / "train"),
         "val": (root / args.split),
