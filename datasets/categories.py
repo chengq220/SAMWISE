@@ -39,6 +39,16 @@ endovis2017_category_rev_verb_dict = {
     7: "Ultrasound Probe scanning and imaging"
 }
 
+endovis2018_category_verb_dict = {
+    1: "Grasping and dissecting tissue with Bipolar Forceps",
+    2: "Grasping and retracting tissue with Prograsp Forceps", 
+    3: "Driving needle and suturing with Large Needle Driver",
+    4: "Cutting and dissecting tissue with Monopolar Curved Scissors",
+    5: "Ultrasound Probe scanning and visualizing internal structures",
+    6: "Suction Instrument aspirating fluids and clearing surgical field",
+    7: "Applying clips to vessels with Clip Applier"
+}
+
 endovis2017_category_descriptor_dict = {
     1: {
         "two insulated tines with small gap between tips",

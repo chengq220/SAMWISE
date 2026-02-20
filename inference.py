@@ -123,13 +123,13 @@ def compute_masks(model, text_prompt, frames_folder, frames_list, ext):
         pred_masks = pred_masks.unsqueeze(0)
         pred_masks = F.interpolate(pred_masks, size=(origin_h, origin_w), mode='bilinear',
                     align_corners=False)
-        all_pred_logits.append(pred_masks.cpu())
-        pred_masks = pred_masks.sigmoid()[0]  # [t, h, w]
+        all_pred_logits.append(pred_masks.squeeze(0).cpu())
+        pred_masks = pred_masks.sigmoid()[0] > args.threshold # [t, h, w]
         all_pred_masks.append(pred_masks)
             
     # store the video results
-    all_pred_masks = torch.cat(all_pred_masks, dim=0).numpy()  # (video_len, h, w)
-    all_pred_logits = torch.cat(all_pred_logits, dim=0).unsqueeze(1)  # (video_len, 1, h, w)
+    all_pred_masks = torch.cat(all_pred_masks, dim=0).cpu().numpy()  # (video_len, h, w)
+    all_pred_logits = torch.cat(all_pred_logits, dim=0).unsqueeze(1) # (video_len, 1, h, w)
     print(f"Raw logits range: [{all_pred_masks.min():.4f}, {all_pred_masks.max():.4f}]")
 
     return all_pred_masks, all_pred_logits
@@ -167,15 +167,17 @@ def inference(args, model, save_path_prefix, in_path, text_prompts):
     print(f"Object IDs found in VOS masks: {obj_id_list}")
     in_path_folder = os.path.basename(in_path)
     obj_logits = defaultdict(torch.Tensor)
+    name = args.text_prompts[0]
     # For each expression
     for id in obj_id_list:
         text_prompt = endovis2017_category_verb_dict.get(id, "Ultrasound Probe scanning and visualizing internal structures")
+        # print(text_prompt)
 
         all_pred_masks, all_pred_logits = compute_masks(model, text_prompt, frames_folder, frames_list, ext)
         obj_logits[id] = all_pred_logits
             
-        save_visualize_path_dir = join(save_path_prefix, text_prompt.replace(' ', '_'), 'viz', in_path_folder, str(id))
-        save_mask_path_dir = join(save_path_prefix, text_prompt.replace(' ', '_'), "pred", in_path_folder, str(id))
+        save_visualize_path_dir = join(save_path_prefix, name, 'viz', in_path_folder, str(id))
+        save_mask_path_dir = join(save_path_prefix, name, "pred", in_path_folder, str(id))
         
         os.makedirs(save_visualize_path_dir, exist_ok=True)
         os.makedirs(save_mask_path_dir, exist_ok=True)
@@ -212,9 +214,8 @@ def inference(args, model, save_path_prefix, in_path, text_prompts):
         )
     
         for i, object_id in enumerate(object_ids):
-            if frame_idx in obj_logits[object_id]:
-                scores[i] = obj_logits[object_id][frame_idx]
-        
+            scores[i] = obj_logits[object_id][frame_idx]
+
         scores = apply_non_overlapping_constraints(scores)
         per_obj_output_mask = {
             object_id: (scores[i] > args.threshold).cpu()
@@ -229,10 +230,19 @@ def inference(args, model, save_path_prefix, in_path, text_prompts):
     
         multiclass_masks[frame_idx] = multiclass_mask
 
-    save_visualize_multi_path = join(save_path_prefix, text_prompt.replace(' ', '_'), 'pred', in_path_folder, 'all')
+    save_mask_multi_path = join(save_path_prefix, name, 'pred', in_path_folder, 'all')
+    save_visualize_multi_path = join(save_path_prefix, name, 'viz', in_path_folder, 'all')
+    os.makedirs(save_mask_multi_path, exist_ok=True)
     os.makedirs(save_visualize_multi_path, exist_ok=True)
-    for frame_idx, mask in multiclass_masks.items():
-        Image.fromarray(mask).save(join(save_visualize_multi_path, f"frame_{frame_idx:05d}.png"))
+    for mask, frame_idx in zip(multiclass_masks.items(), frames_list):
+        img_path = join(frames_folder, frame_idx + ext)
+        source_img = Image.open(img_path).convert('RGBA') # PIL image
+        save_path_all = join(save_mask_multi_path, f"{frame_idx}.png")
+        Image.fromarray(mask[1]).save(save_path_all)
+
+        viz_multi = vis_add_mask_multiclass(source_img, mask[1])
+        viz_multi_save = join(save_visualize_multi_path, f"{frame_idx}.png")
+        viz_multi.save(viz_multi_save)
 
     print(f'Output masks and videos can be found in {save_path_prefix}')
     return 
@@ -273,6 +283,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('SAMWISE evaluation script', parents=[opts.get_args_parser()])
     parser.add_argument('--input_path', default=None, type=str, required=True, help='path to mp4 video or frames folder')
     parser.add_argument('--mask_input', default=None, type=str, required=True, help='path to mask inputs')
+    parser.add_argument('--text_prompts', default=[''], type=str, required=True, nargs='+', help="List of referring expressions, separated by whitespace")
 
     args = parser.parse_args()
     check_args(args)

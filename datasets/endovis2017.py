@@ -13,7 +13,7 @@ import numpy as np
 import random
 
 from datasets.categories import endovis2017_category_rev_dict as rev_category_dict, \
-    endovis2017_category_descriptor_dict as descriptor, endovis2017_category_rev_verb_dict as verb_dict
+    endovis2017_category_descriptor_dict as descriptor, endovis2018_category_verb_dict as verb_dict
 
 class EndoVis2017Dataset(Dataset):
     def __init__(self, img_folder: Path, transforms,

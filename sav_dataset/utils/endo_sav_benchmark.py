@@ -8,16 +8,6 @@
 # and  https://github.com/davisvideochallenge/davis2017-evaluation
 # with their licenses found in the LICENSE_VOS_BENCHMARK and LICENSE_DAVIS files
 # in the sav_dataset directory.
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-# All rights reserved.
-
-# This source code is licensed under the license found in the
-# LICENSE file in the sav_dataset directory of this source tree.
-
-# adapted from https://github.com/hkchengrex/vos-benchmark
-# and  https://github.com/davisvideochallenge/davis2017-evaluation
-# with their licenses found in the LICENSE_VOS_BENCHMARK and LICENSE_DAVIS files
-# in the sav_dataset directory.
 import math
 import os
 import time
@@ -26,7 +16,6 @@ from collections import defaultdict
 from multiprocessing import Pool
 from os import path
 from typing import Dict, List, Tuple
-from argparse import ArgumentParser
 
 import cv2
 import numpy as np
@@ -71,9 +60,11 @@ class VideoEvaluator:
                 evaluator.feed_frame(mask=pred_array, gt=gt_array, frame=frame, object_id=obj_id)
             iou, boundary_f, dice = evaluator.conclude()
             eval_results.append((obj_id, iou, boundary_f, dice))
+
         if is_sav_format:
             iou_output, boundary_f_output, dice_output = self.consolidate(eval_results)
         else:
+            assert len(eval_results) == 1
             iou_output = eval_results[0][1]
             boundary_f_output = eval_results[0][2]
             dice_output = eval_results[0][3]
@@ -117,49 +108,30 @@ class VideoEvaluator:
 
     def scan_vid_folder(self, vid_name, evaluate_object_ids) -> Tuple[List, bool]:
         """
-        Scan the folder structure for DAVIS format:
-        pred_root/vid_name/00000.png (frames directly in video folder)
+        Scan the folder structure of the video and return a list of folders for evaluate.
         """
         vid_gt_path = path.join(self.gt_root, vid_name)
         vid_pred_path = path.join(self.pred_root, vid_name)
-
-        if not os.path.exists(vid_pred_path):
-            print(f"WARNING: Prediction path does not exist: {vid_pred_path}")
-            return [], False
-        
-        # Get all PNG files directly from the video folder (NOT subdirectories)
-        all_files = os.listdir(vid_pred_path)
-        frames = sorted([f for f in all_files if f.endswith('.png')])
-        
-        print(f"Found {len(frames)} frames: {frames[:5]}...")  # Show first 5
-        
-        if not frames:
-            print(f"WARNING: No PNG files found in {vid_pred_path}")
-            return [], False
-        
-        # Filter frames that exist in GT
-        valid_frames = []
-        for frame in frames:
-            gt_frame_path = path.join(vid_gt_path, frame)
-            if os.path.exists(gt_frame_path):
-                valid_frames.append(frame)
-            else:
-                print(f"Frame {frame} not found in GT: {gt_frame_path}")
-        
-        print(f"Valid frames after GT check: {len(valid_frames)}")
-        
-        if not valid_frames:
-            print(f"WARNING: No valid frames found for {vid_name}")
-            return [], False
-        
+        all_files_and_dirs = sorted(os.listdir(vid_pred_path))
         to_evaluate = []
-        for obj_id in evaluate_object_ids:
-            obj_id_str = str(obj_id)
-            # Use the same frames and paths for all objects
-            to_evaluate.append((valid_frames.copy(), obj_id_str, vid_gt_path, vid_pred_path))
-            # print(f"Added object {obj_id} with {len(valid_frames)} frames")
-        
-        return to_evaluate, False
+        is_sav_format = True
+        for obj_dir in all_files_and_dirs:
+            # check if the object is a integer
+            if (not obj_dir.isdigit()
+                    or not path.isdir(path.join(vid_pred_path, obj_dir))
+                    or int(obj_dir) not in evaluate_object_ids  # skip the object not in the list
+            ):
+                continue
+            obj_gt_path = vid_gt_path
+            obj_pred_path = path.join(vid_pred_path, obj_dir)
+            frames = sorted(os.listdir(obj_pred_path))
+            # check if the frame is in the gt folder
+            for frame in frames:
+                if not os.path.exists(path.join(obj_gt_path, frame)):
+                    print(f"frame {frame} not found in {obj_gt_path}")
+                    frames.remove(frame)
+            to_evaluate.append((frames, obj_dir, obj_gt_path, obj_pred_path))
+        return to_evaluate, is_sav_format
 
     @staticmethod
     def consolidate(
@@ -396,7 +368,7 @@ def benchmark(
     assert len(gt_roots) == len(mask_roots)
     single_dataset = len(gt_roots) == 1
     if evaluate_object_id_list is None:
-        evaluate_object_id_list = range(1, 7)
+        evaluate_object_id_list = range(1, 256)
 
     if verbose:
         if skip_first_and_last:
