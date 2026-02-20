@@ -40,8 +40,8 @@ endovis2017_category_rev_verb_dict = {
 }
 
 endovis2018_category_verb_dict = {
-    1: "Grasping and dissecting tissue with Bipolar Forceps",
-    2: "Grasping and retracting tissue with Prograsp Forceps", 
+    1: "Dissecting tissue with Bipolar Forceps",
+    2: "Retracting tissue with Prograsp Forceps", 
     3: "Driving needle and suturing with Large Needle Driver",
     4: "Cutting and dissecting tissue with Monopolar Curved Scissors",
     5: "Ultrasound Probe scanning and visualizing internal structures",
