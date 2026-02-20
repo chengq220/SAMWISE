@@ -16,5 +16,7 @@ def get_coco_api_from_dataset(dataset):
 def build_dataset(dataset_file: str, image_set: str, args):
     if dataset_file == 'endovis2017':
         return build_endovis2017(image_set, args)
+    if dataset_file == 'endovis2018':
+        return build_endovis2017(image_set, args)
 
     raise ValueError(f'dataset {dataset_file} not supported')
