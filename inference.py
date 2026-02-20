@@ -22,7 +22,7 @@ from datasets.transform_utils import VideoEvalDataset
 from torch.utils.data import DataLoader
 from os.path import join
 from datasets.transform_utils import vis_add_mask, vis_add_mask_multiclass
-from datasets.categories import endovis2017_category_dict, endovis2017_category_verb_dict
+from datasets.categories import endovis2017_category_dict, endovis2018_category_verb_dict
 import glob
 import torchvision.transforms as TF
 
@@ -173,8 +173,7 @@ def inference(args, model, save_path_prefix, in_path, text_prompts):
     name = args.text_prompts[0]
     # For each expression
     for id in obj_id_list:
-        text_prompt = endovis2017_category_verb_dict.get(id, "Ultrasound Probe scanning and visualizing internal structures")
-        # print(text_prompt)
+        text_prompt = endovis2018_category_verb_dict.get(id, "Ultrasound Probe scanning and visualizing internal structures")
 
         all_pred_masks, all_pred_logits = compute_masks(model, text_prompt, frames_folder, frames_list, ext)
         obj_logits[id] = all_pred_logits
