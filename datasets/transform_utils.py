@@ -164,6 +164,7 @@ class VideoEvalDataset(Dataset):
             TF.ToTensor(),
             TF.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
+        self.origin_h, self.origin_w = self.transform(Image.open(join(vid_folder, frames[0]+ext))).shape[-2:]
             
     def __len__(self):
         return self.vid_len
